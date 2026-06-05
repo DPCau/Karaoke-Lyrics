@@ -34,15 +34,15 @@ const ENCODINGS = [
 ];
 
 const VIDEO_PRESETS = [
-  { value: "ultrafast", label: "Ultra Fast" },
-  { value: "superfast", label: "Super Fast" },
-  { value: "veryfast", label: "Very Fast" },
-  { value: "faster", label: "Faster" },
-  { value: "fast", label: "Fast" },
-  { value: "medium", label: "Medium" },
-  { value: "slow", label: "Slow" },
-  { value: "slower", label: "Slower" },
-  { value: "veryslow", label: "Very Slow" },
+  { value: "ultrafast", labelKey: "export.ultrafast" },
+  { value: "superfast", labelKey: "export.superfast" },
+  { value: "veryfast", labelKey: "export.veryfast" },
+  { value: "faster", labelKey: "export.faster" },
+  { value: "fast", labelKey: "export.fast" },
+  { value: "medium", labelKey: "export.medium" },
+  { value: "slow", labelKey: "export.slow" },
+  { value: "slower", labelKey: "export.slower" },
+  { value: "veryslow", labelKey: "export.veryslow" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -312,7 +312,10 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
                         </svg>
                       )}
                     </div>
-                    {fmt.toUpperCase()}
+                    {fmt === "lrc" && t("export.formatLrc")}
+                    {fmt === "json" && t("export.formatJson")}
+                    {fmt === "ass" && t("export.formatAss")}
+                    {fmt === "video" && t("export.formatVideo")}
                   </button>
                 );
               })}
@@ -327,33 +330,33 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           {/* Metadata section */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">
-              {t("export.dialog")} <span className="text-gray-600 ml-1">({t("common.info")})</span>
+              {t("export.metadata")}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
-                placeholder={t("common.info")}
+                placeholder={t("export.title")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
               />
               <input
                 type="text"
-                placeholder={t("common.info")}
+                placeholder={t("export.artist")}
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
               />
               <input
                 type="text"
-                placeholder={t("common.info")}
+                placeholder={t("export.album")}
                 value={album}
                 onChange={(e) => setAlbum(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
               />
               <input
                 type="text"
-                placeholder={t("common.info")}
+                placeholder={t("export.author")}
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
@@ -365,7 +368,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           {format === "lrc" && (
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">
-                LRC {t("export.format")}
+                {t("export.formatLrc")} {t("export.format")}
               </label>
               <div className="space-y-2 bg-surface-2 rounded-lg p-3">
                 <div className="flex items-center justify-between">
@@ -383,7 +386,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
                   </select>
                 </div>
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs text-gray-400">{t("export.dialog")}</span>
+                  <span className="text-xs text-gray-400">{t("export.enhancedWordTags")}</span>
                   <input
                     type="checkbox"
                     checked={enhancedWordTags}
@@ -392,7 +395,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
                   />
                 </label>
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs text-gray-400">UTF-8 BOM</span>
+                  <span className="text-xs text-gray-400">{t("export.utf8Bom")}</span>
                   <input
                     type="checkbox"
                     checked={bom}
@@ -411,7 +414,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
               </label>
               <div className="space-y-2 bg-surface-2 rounded-lg p-3">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs text-gray-400">{t("export.dialog")}</span>
+                  <span className="text-xs text-gray-400">{t("export.compactJson")}</span>
                   <input
                     type="checkbox"
                     checked={compactJson}
@@ -430,7 +433,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
               </label>
               <div className="space-y-2 bg-surface-2 rounded-lg p-3">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs text-gray-400">{t("pronunciation.panel")}</span>
+                  <span className="text-xs text-gray-400">{t("export.includePronunciation")}</span>
                   <input
                     type="checkbox"
                     checked={includePronunciation}
@@ -445,7 +448,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           {/* Video preset (shown when video is conceptually active) */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">
-              {t("export.dialog")}
+              {t("export.videoPreset")}
             </label>
             <select
               value={videoPreset}
@@ -454,7 +457,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
             >
               {VIDEO_PRESETS.map((p) => (
                 <option key={p.value} value={p.value}>
-                  {p.label}
+                  {t(p.labelKey)}
                 </option>
               ))}
             </select>

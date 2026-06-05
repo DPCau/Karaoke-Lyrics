@@ -1,4 +1,5 @@
 import { useStore } from "../../store";
+import { useTranslation } from "react-i18next";
 import {
   SliderControl,
   ToggleControl,
@@ -12,26 +13,32 @@ import { ColorPicker } from "./ColorPicker";
 // ---------------------------------------------------------------------------
 
 const OUTLINE_STYLES = [
-  { value: "outset" as const, label: "Outset" },
-  { value: "inset" as const, label: "Inset" },
-  { value: "center" as const, label: "Center" },
+  { value: "outset" as const, labelKey: "style_panel.outset" },
+  { value: "inset" as const, labelKey: "style_panel.inset" },
+  { value: "center" as const, labelKey: "style_panel.center" },
 ];
 
 export function OutlineControls() {
+  const { t } = useTranslation();
   const outline = useStore((s) => s.outline);
   const setOutline = useStore((s) => s.setOutline);
+
+  const outlineStyleOptions = OUTLINE_STYLES.map((opt) => ({
+    value: opt.value,
+    label: t(opt.labelKey),
+  }));
 
   return (
     <div className="space-y-3">
       <ToggleControl
-        label="Enabled"
+        label={t("style_panel.enabled")}
         value={outline.enabled}
         onChange={(v) => setOutline({ enabled: v })}
       />
       {outline.enabled && (
         <>
           <SliderControl
-            label="Width"
+            label={t("style_panel.width")}
             value={outline.width}
             min={0}
             max={20}
@@ -45,9 +52,9 @@ export function OutlineControls() {
             compact
           />
           <ButtonGroup
-            label="Style"
+            label={t("style_panel.style")}
             value={outline.style}
-            options={OUTLINE_STYLES}
+            options={outlineStyleOptions}
             onChange={(v) => setOutline({ style: v })}
           />
         </>
@@ -61,13 +68,14 @@ export function OutlineControls() {
 // ---------------------------------------------------------------------------
 
 export function ShadowControls() {
+  const { t } = useTranslation();
   const shadow = useStore((s) => s.shadow);
   const setShadow = useStore((s) => s.setShadow);
 
   return (
     <div className="space-y-3">
       <ToggleControl
-        label="Enabled"
+        label={t("style_panel.enabled")}
         value={shadow.enabled}
         onChange={(v) => setShadow({ enabled: v })}
       />
@@ -79,7 +87,7 @@ export function ShadowControls() {
             compact
           />
           <SliderControl
-            label="Blur"
+            label={t("style_panel.blur")}
             value={shadow.blur}
             min={0}
             max={50}
@@ -88,7 +96,7 @@ export function ShadowControls() {
             onChange={(v) => setShadow({ blur: v })}
           />
           <SliderControl
-            label="Offset X"
+            label={t("style_panel.offsetX")}
             value={shadow.offsetX}
             min={-50}
             max={50}
@@ -97,7 +105,7 @@ export function ShadowControls() {
             onChange={(v) => setShadow({ offsetX: v })}
           />
           <SliderControl
-            label="Offset Y"
+            label={t("style_panel.offsetY")}
             value={shadow.offsetY}
             min={-50}
             max={50}
@@ -116,13 +124,14 @@ export function ShadowControls() {
 // ---------------------------------------------------------------------------
 
 export function GlowControls() {
+  const { t } = useTranslation();
   const glow = useStore((s) => s.glow);
   const setGlow = useStore((s) => s.setGlow);
 
   return (
     <div className="space-y-3">
       <ToggleControl
-        label="Enabled"
+        label={t("style_panel.enabled")}
         value={glow.enabled}
         onChange={(v) => setGlow({ enabled: v })}
       />
@@ -134,7 +143,7 @@ export function GlowControls() {
             compact
           />
           <SliderControl
-            label="Radius"
+            label={t("style_panel.radius")}
             value={glow.radius}
             min={0}
             max={50}
@@ -143,7 +152,7 @@ export function GlowControls() {
             onChange={(v) => setGlow({ radius: v })}
           />
           <SliderControl
-            label="Intensity"
+            label={t("style_panel.intensity")}
             value={glow.intensity}
             min={0}
             max={100}
@@ -162,27 +171,37 @@ export function GlowControls() {
 // ---------------------------------------------------------------------------
 
 const SWEEP_DIRECTIONS = [
-  { value: "left-to-right" as const, label: "L->R" },
-  { value: "right-to-left" as const, label: "R->L" },
-  { value: "top-to-bottom" as const, label: "T->B" },
-  { value: "bottom-to-top" as const, label: "B->T" },
+  { value: "left-to-right" as const, labelKey: "style_panel.ltr" },
+  { value: "right-to-left" as const, labelKey: "style_panel.rtl" },
+  { value: "top-to-bottom" as const, labelKey: "style_panel.ttb" },
+  { value: "bottom-to-top" as const, labelKey: "style_panel.btt" },
 ];
 
 const EASING_OPTIONS = [
-  { value: "linear" as const, label: "Linear" },
-  { value: "ease-in" as const, label: "Ease In" },
-  { value: "ease-out" as const, label: "Ease Out" },
-  { value: "ease-in-out" as const, label: "Ease In-Out" },
+  { value: "linear" as const, labelKey: "style_panel.easingLinear" },
+  { value: "ease-in" as const, labelKey: "style_panel.easingEaseIn" },
+  { value: "ease-out" as const, labelKey: "style_panel.easingEaseOut" },
+  { value: "ease-in-out" as const, labelKey: "style_panel.easingEaseInOut" },
 ];
 
 export function SweepControls() {
+  const { t } = useTranslation();
   const sweep = useStore((s) => s.sweep);
   const setSweep = useStore((s) => s.setSweep);
+
+  const sweepDirectionOptions = SWEEP_DIRECTIONS.map((opt) => ({
+    value: opt.value,
+    label: t(opt.labelKey),
+  }));
+  const easingOptions = EASING_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: t(opt.labelKey),
+  }));
 
   return (
     <div className="space-y-3">
       <ToggleControl
-        label="Enabled"
+        label={t("style_panel.enabled")}
         value={sweep.enabled}
         onChange={(v) => setSweep({ enabled: v })}
       />
@@ -194,13 +213,13 @@ export function SweepControls() {
             compact
           />
           <ButtonGroup
-            label="Direction"
+            label={t("style_panel.direction")}
             value={sweep.direction}
-            options={SWEEP_DIRECTIONS}
+            options={sweepDirectionOptions}
             onChange={(v) => setSweep({ direction: v })}
           />
           <SliderControl
-            label="Glow Width"
+            label={t("style_panel.glowWidth")}
             value={sweep.glowWidth}
             min={0}
             max={20}
@@ -209,7 +228,7 @@ export function SweepControls() {
             onChange={(v) => setSweep({ glowWidth: v })}
           />
           <SliderControl
-            label="Gradient Width"
+            label={t("style_panel.gradientWidth")}
             value={sweep.gradientWidth}
             min={0}
             max={1}
@@ -218,9 +237,9 @@ export function SweepControls() {
             onChange={(v) => setSweep({ gradientWidth: v })}
           />
           <SelectControl
-            label="Easing"
+            label={t("style_panel.easing")}
             value={sweep.easing}
-            options={EASING_OPTIONS}
+            options={easingOptions}
             onChange={(v) => setSweep({ easing: v as typeof sweep.easing })}
           />
         </>
@@ -234,19 +253,25 @@ export function SweepControls() {
 // ---------------------------------------------------------------------------
 
 const WIDTH_MODE_OPTIONS = [
-  { value: "text" as const, label: "Text" },
-  { value: "line" as const, label: "Line" },
-  { value: "full" as const, label: "Full" },
+  { value: "text" as const, labelKey: "style_panel.widthModeText" },
+  { value: "line" as const, labelKey: "style_panel.widthModeLine" },
+  { value: "full" as const, labelKey: "style_panel.widthModeFull" },
 ];
 
 export function BackgroundBarControls() {
+  const { t } = useTranslation();
   const bgBar = useStore((s) => s.backgroundBar);
   const setBgBar = useStore((s) => s.setBackgroundBar);
+
+  const widthModeOptions = WIDTH_MODE_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: t(opt.labelKey),
+  }));
 
   return (
     <div className="space-y-3">
       <ToggleControl
-        label="Enabled"
+        label={t("style_panel.enabled")}
         value={bgBar.enabled}
         onChange={(v) => setBgBar({ enabled: v })}
       />
@@ -258,7 +283,7 @@ export function BackgroundBarControls() {
             compact
           />
           <SliderControl
-            label="Padding"
+            label={t("style_panel.padding")}
             value={bgBar.padding}
             min={0}
             max={50}
@@ -267,7 +292,7 @@ export function BackgroundBarControls() {
             onChange={(v) => setBgBar({ padding: v })}
           />
           <SliderControl
-            label="Border Radius"
+            label={t("style_panel.borderRadius")}
             value={bgBar.borderRadius}
             min={0}
             max={30}
@@ -276,7 +301,7 @@ export function BackgroundBarControls() {
             onChange={(v) => setBgBar({ borderRadius: v })}
           />
           <SliderControl
-            label="Opacity"
+            label={t("style_panel.opacity")}
             value={bgBar.opacity}
             min={0}
             max={1}
@@ -285,9 +310,9 @@ export function BackgroundBarControls() {
             onChange={(v) => setBgBar({ opacity: v })}
           />
           <ButtonGroup
-            label="Width Mode"
+            label={t("style_panel.widthMode")}
             value={bgBar.widthMode}
-            options={WIDTH_MODE_OPTIONS}
+            options={widthModeOptions}
             onChange={(v) => setBgBar({ widthMode: v })}
           />
         </>
@@ -301,25 +326,31 @@ export function BackgroundBarControls() {
 // ---------------------------------------------------------------------------
 
 const ALIGNMENT_OPTIONS = [
-  { value: "left" as const, label: "Left" },
-  { value: "center" as const, label: "Center" },
-  { value: "right" as const, label: "Right" },
+  { value: "left" as const, labelKey: "style_panel.alignLeft" },
+  { value: "center" as const, labelKey: "style_panel.alignCenter" },
+  { value: "right" as const, labelKey: "style_panel.alignRight" },
 ];
 
 export function LayoutControls() {
+  const { t } = useTranslation();
   const layout = useStore((s) => s.layout);
   const setLayout = useStore((s) => s.setLayout);
+
+  const alignmentOptions = ALIGNMENT_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: t(opt.labelKey),
+  }));
 
   return (
     <div className="space-y-3">
       <ButtonGroup
-        label="Alignment"
+        label={t("style_panel.alignment")}
         value={layout.alignment}
-        options={ALIGNMENT_OPTIONS}
+        options={alignmentOptions}
         onChange={(v) => setLayout({ alignment: v })}
       />
       <SliderControl
-        label="Vertical Position"
+        label={t("style_panel.verticalPosition")}
         value={layout.verticalPosition}
         min={0}
         max={100}
@@ -328,14 +359,14 @@ export function LayoutControls() {
         onChange={(v) => setLayout({ verticalPosition: v })}
       />
       <ToggleControl
-        label="Dual Line"
+        label={t("style_panel.dualLine")}
         value={layout.dualLine}
         onChange={(v) => setLayout({ dualLine: v })}
       />
       {layout.dualLine && (
         <>
           <SliderControl
-            label="Line Gap"
+            label={t("style_panel.lineGap")}
             value={layout.lineGap}
             min={0}
             max={60}
@@ -344,7 +375,7 @@ export function LayoutControls() {
             onChange={(v) => setLayout({ lineGap: v })}
           />
           <SliderControl
-            label="Current Line Scale"
+            label={t("style_panel.currentLineScale")}
             value={layout.currentLineScale}
             min={0.5}
             max={2.0}
@@ -353,7 +384,7 @@ export function LayoutControls() {
             onChange={(v) => setLayout({ currentLineScale: v })}
           />
           <SliderControl
-            label="Next Line Scale"
+            label={t("style_panel.nextLineScale")}
             value={layout.nextLineScale}
             min={0.3}
             max={1.5}

@@ -102,6 +102,7 @@ function RightPanelTabs() {
 }
 
 function PreviewArea() {
+  const { t } = useTranslation();
   const videoPath = useStore((s) => s.videoPath);
 
   return (
@@ -115,7 +116,7 @@ function PreviewArea() {
           preload="auto"
         />
       ) : (
-        <span className="text-gray-600 text-xs">Preview</span>
+        <span className="text-gray-600 text-xs">{t("common.preview")}</span>
       )}
     </div>
   );

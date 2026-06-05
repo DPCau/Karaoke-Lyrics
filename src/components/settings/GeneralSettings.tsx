@@ -95,7 +95,7 @@ export function GeneralSettings() {
       {/* Restore Last Project */}
       <label className="flex items-center justify-between cursor-pointer">
         <span className="text-xs text-gray-300">
-          {t("settings.general")}
+          {t("settings.restoreLastProject")}
         </span>
         <input
           type="checkbox"

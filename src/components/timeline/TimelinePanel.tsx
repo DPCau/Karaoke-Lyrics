@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 import { WaveformDisplay } from "./WaveformDisplay";
 import { TimeRuler } from "./TimeRuler";
@@ -15,6 +16,7 @@ import { TimingTrack } from "./TimingTrack";
  * allowing the timeline to be zoomed by adjusting pxPerSec.
  */
 export function TimelinePanel() {
+  const { t } = useTranslation();
   const duration = useStore((s) => s.duration);
   const hasMedia = useStore(
     (s) => s.videoPath !== null || s.audioPath !== null,
@@ -81,7 +83,7 @@ export function TimelinePanel() {
             className="w-6 h-6 flex items-center justify-center rounded
                        bg-surface-2 text-gray-400 hover:text-gray-200
                        hover:bg-surface-3 transition-colors text-xs"
-            title="Zoom out"
+            title={t("timing_panel.zoomOut")}
           >
             -
           </button>
@@ -94,7 +96,7 @@ export function TimelinePanel() {
             className="w-6 h-6 flex items-center justify-center rounded
                        bg-surface-2 text-gray-400 hover:text-gray-200
                        hover:bg-surface-3 transition-colors text-xs"
-            title="Zoom in"
+            title={t("timing_panel.zoomIn")}
           >
             +
           </button>
@@ -104,7 +106,7 @@ export function TimelinePanel() {
 
         {/* Snap mode */}
         <div className="flex items-center gap-1.5">
-          <label className="text-[10px] text-gray-500">Snap</label>
+          <label className="text-[10px] text-gray-500">{t("timing_panel.snap")}</label>
           <select
             value={snapMode}
             onChange={(e) => setSnapMode(e.target.value as any)}
@@ -114,9 +116,9 @@ export function TimelinePanel() {
                        focus:outline-none focus:border-accent/50
                        disabled:opacity-40 cursor-pointer"
           >
-            <option value="none">None</option>
-            <option value="waveform_peak">Peak</option>
-            <option value="beat">Beat</option>
+            <option value="none">{t("timing_panel.snapNone")}</option>
+            <option value="waveform_peak">{t("timing_panel.snapPeak")}</option>
+            <option value="beat">{t("timing_panel.snapBeat")}</option>
           </select>
         </div>
 
@@ -124,7 +126,7 @@ export function TimelinePanel() {
 
         {/* BPM */}
         <div className="flex items-center gap-1.5">
-          <label className="text-[10px] text-gray-500">BPM</label>
+          <label className="text-[10px] text-gray-500">{t("timing_panel.bpm")}</label>
           <input
             type="number"
             min={0}
@@ -153,7 +155,7 @@ export function TimelinePanel() {
         )}
         {!isRecording && hasLyrics && (
           <span className="text-[10px] text-gray-600">
-            {currentMarkIndex}/{totalMarkable} marked
+            {t("timing_panel.markedCount", { done: currentMarkIndex, total: totalMarkable })}
           </span>
         )}
       </div>

@@ -250,7 +250,7 @@ export function LyricTextEditor() {
           </div>
           {previews.length === 0 && (
             <div className="flex items-center justify-center h-32 text-gray-600 text-xs">
-              {t("media.noMedia")}
+              {t("lyrics.noPreview")}
             </div>
           )}
           {previews.map((pre, i) => (
@@ -283,7 +283,7 @@ export function LyricTextEditor() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-gray-700 text-xs">(empty)</span>
+                  <span className="text-gray-700 text-xs">{t("lyrics.lineEmpty")}</span>
                 )}
               </div>
             </div>
@@ -303,7 +303,7 @@ export function LyricTextEditor() {
       {/* Store status */}
       {lines.length > 0 && (
         <div className="text-[10px] text-gray-600 px-1">
-          {t("lyrics.lineCount", { count: lines.length })} loaded
+          {t("lyrics.linesLoaded", { count: lines.length })}
         </div>
       )}
     </div>

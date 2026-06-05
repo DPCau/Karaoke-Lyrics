@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 
 interface WaveformDisplayProps {
@@ -19,6 +20,7 @@ interface WaveformDisplayProps {
  * current playback position, and colours the played portion differently.
  */
 export function WaveformDisplay({ height = 80, width: fixedWidth }: WaveformDisplayProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +73,7 @@ export function WaveformDisplay({ height = 80, width: fixedWidth }: WaveformDisp
       ctx.font = "11px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(waveformData.length === 0 ? "No waveform data" : "", w / 2, h / 2);
+      ctx.fillText(waveformData.length === 0 ? t("timing_panel.noWaveform") : "", w / 2, h / 2);
       return;
     }
 

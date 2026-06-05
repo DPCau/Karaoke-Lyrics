@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState, type MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 import type { LyricLine, LyricChar } from "../../types/lyrics";
 
@@ -39,6 +40,7 @@ export function TimingTrack({
   pxPerSec,
   scrollLeft: _scrollLeft,
 }: TimingTrackProps) {
+  const { t } = useTranslation();
   const lines = useStore((s) => s.lines);
   const updateCharTiming = useStore((s) => s.updateCharTiming);
   const snapMode = useStore((s) => s.snapMode);
@@ -221,7 +223,7 @@ export function TimingTrack({
 
       {allEntries.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-[10px] text-gray-700">
-          Load lyrics and start marking
+          {t("timing_panel.loadLyricsHint")}
         </div>
       )}
     </div>

@@ -77,17 +77,17 @@ export function PlaybackSettings() {
       {/* Loop Mode */}
       <div>
         <label className="block text-xs font-medium text-gray-300 mb-1.5">
-          {t("settings.timing")}
+          {t("settings.loopMode")}
         </label>
         <select
           value={settings.playback.loopMode}
           onChange={handleLoopModeChange}
           className="w-full px-3 py-2 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 focus:outline-none focus:border-accent transition-colors"
         >
-          <option value="none">{t("timing_panel.snapNone")}</option>
-          <option value="line">{t("timing_panel.snapNone")}</option>
-          <option value="char">{t("timing_panel.snapNone")}</option>
-          <option value="selection">{t("timing_panel.snapNone")}</option>
+          <option value="none">{t("settings.loopModeNone")}</option>
+          <option value="line">{t("settings.loopModeLine")}</option>
+          <option value="char">{t("settings.loopModeChar")}</option>
+          <option value="selection">{t("settings.loopModeSelection")}</option>
         </select>
       </div>
     </div>

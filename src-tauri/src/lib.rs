@@ -1,7 +1,9 @@
 mod commands;
 mod engine;
+mod menu;
 
 use log::info;
+use tauri::Emitter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -12,6 +14,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .setup(|app| {
+            let menu = menu::create_app_menu(app)?;
+            app.set_menu(menu)?;
+            Ok(())
+        })
+        .on_menu_event(|app, event| {
+            let id = event.id().as_ref();
+            let _ = app.emit("menu-event", id);
+        })
         .invoke_handler(tauri::generate_handler![
             commands::media::media_open_video,
             commands::media::media_open_audio,

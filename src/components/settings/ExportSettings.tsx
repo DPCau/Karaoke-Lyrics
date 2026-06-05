@@ -49,10 +49,10 @@ export function ExportSettings() {
           onChange={handleDefaultFormatChange}
           className="w-full px-3 py-2 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 focus:outline-none focus:border-accent transition-colors"
         >
-          <option value="lrc">LRC</option>
-          <option value="json">JSON</option>
-          <option value="ass">ASS</option>
-          <option value="mp4_h264">MP4 (H.264)</option>
+          <option value="lrc">{t("export.formatLrc")}</option>
+          <option value="json">{t("export.formatJson")}</option>
+          <option value="ass">{t("export.formatAss")}</option>
+          <option value="mp4_h264">{t("export.defaultFormatMp4")}</option>
         </select>
       </div>
 
@@ -91,29 +91,29 @@ export function ExportSettings() {
       {/* Encoder Preset */}
       <div>
         <label className="block text-xs font-medium text-gray-300 mb-1.5">
-          {t("export.dialog")}
+          {t("settings.encoderPreset")}
         </label>
         <select
           value={settings.export.encoderPreset}
           onChange={handleEncoderPresetChange}
           className="w-full px-3 py-2 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 focus:outline-none focus:border-accent transition-colors"
         >
-          <option value="ultrafast">Ultra Fast</option>
-          <option value="superfast">Super Fast</option>
-          <option value="veryfast">Very Fast</option>
-          <option value="faster">Faster</option>
-          <option value="fast">Fast</option>
-          <option value="medium">Medium</option>
-          <option value="slow">Slow</option>
-          <option value="slower">Slower</option>
-          <option value="veryslow">Very Slow</option>
+          <option value="ultrafast">{t("export.ultrafast")}</option>
+          <option value="superfast">{t("export.superfast")}</option>
+          <option value="veryfast">{t("export.veryfast")}</option>
+          <option value="faster">{t("export.faster")}</option>
+          <option value="fast">{t("export.fast")}</option>
+          <option value="medium">{t("export.medium")}</option>
+          <option value="slow">{t("export.slow")}</option>
+          <option value="slower">{t("export.slower")}</option>
+          <option value="veryslow">{t("export.veryslow")}</option>
         </select>
       </div>
 
       {/* Open folder after export */}
       <label className="flex items-center justify-between cursor-pointer">
         <span className="text-xs text-gray-300">
-          {t("settings.general")}
+          {t("settings.openFolderAfterExport")}
         </span>
         <input
           type="checkbox"

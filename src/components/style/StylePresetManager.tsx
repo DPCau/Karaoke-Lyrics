@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 import type { AppStore } from "../../store";
 import type { StylePreset } from "../../store/styleSlice";
@@ -70,6 +71,7 @@ const BUILT_IN_PRESETS: { id: StylePreset; label: string }[] = [
 // ---------------------------------------------------------------------------
 
 export function StylePresetManager() {
+  const { t } = useTranslation();
   const applyPreset = useStore((s) => s.applyPreset);
 
   const [customPresets, setCustomPresets] = useState<CustomPresetData[]>(() =>
@@ -142,7 +144,7 @@ export function StylePresetManager() {
       {/* Built-in presets */}
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-gray-600 font-medium mb-1.5">
-          Built-in
+          {t("style_panel.builtin")}
         </label>
         <div className="grid grid-cols-2 gap-1">
           {BUILT_IN_PRESETS.map((preset) => (
@@ -162,7 +164,7 @@ export function StylePresetManager() {
       {customPresets.length > 0 && (
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-gray-600 font-medium mb-1.5">
-            Custom
+            {t("style_panel.custom")}
           </label>
           <div className="space-y-1">
             {customPresets.map((preset) => (
@@ -182,7 +184,7 @@ export function StylePresetManager() {
                   type="button"
                   onClick={() => handleDeleteCustom(preset.id)}
                   className="w-5 h-5 flex items-center justify-center rounded text-gray-600 hover:text-red-400 hover:bg-surface-3 opacity-0 group-hover:opacity-100 transition-all text-[10px] flex-shrink-0"
-                  title="Delete preset"
+                  title={t("style_panel.deletePresetTitle")}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -209,7 +211,7 @@ export function StylePresetManager() {
                   setSaveName("");
                 }
               }}
-              placeholder="Preset name..."
+              placeholder={t("style_panel.presetName")}
               className="flex-1 bg-surface-2 border border-surface-3 rounded px-2 py-1 text-[11px] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent/50"
               autoFocus
             />
@@ -218,7 +220,7 @@ export function StylePresetManager() {
               onClick={handleSaveCurrent}
               className="px-2 py-1 text-[11px] font-medium bg-accent text-white rounded hover:bg-accent-hover transition-colors"
             >
-              Save
+              {t("common.save")}
             </button>
             <button
               type="button"
@@ -228,7 +230,7 @@ export function StylePresetManager() {
               }}
               className="px-2 py-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         ) : (
@@ -237,7 +239,7 @@ export function StylePresetManager() {
             onClick={() => setShowSaveInput(true)}
             className="w-full px-2 py-1.5 text-[11px] font-medium text-accent bg-accent/10 rounded hover:bg-accent/20 transition-colors"
           >
-            + Save Current as Preset
+            + {t("style_panel.saveCurrent")}
           </button>
         )}
       </div>
