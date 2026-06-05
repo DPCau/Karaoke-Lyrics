@@ -3,7 +3,7 @@ import { useStore } from "../../store";
 import { MediaPanel } from "../media/MediaPanel";
 import { LyricTextEditor } from "../lyrics/LyricTextEditor";
 import { PlaybackControls } from "../media/PlaybackControls";
-import { WaveformDisplay } from "../timeline/WaveformDisplay";
+import { TimelinePanel } from "../timeline/TimelinePanel";
 import { LyricsOverlay } from "../lyrics/LyricsOverlay";
 
 interface PanelProps {
@@ -44,7 +44,6 @@ function Panel({ id, title, children, className = "" }: PanelProps) {
 
 export function MainLayout() {
   const lines = useStore((s) => s.lines);
-  const currentTime = useStore((s) => s.currentTime);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-surface-0">
@@ -66,18 +65,7 @@ export function MainLayout() {
           <div className="flex flex-col gap-3 h-full">
             {/* Lyrics overlay preview */}
             <div className="flex-1 relative bg-black/40 rounded overflow-hidden min-h-[120px]">
-              <LyricsOverlay
-                currentTime={currentTime}
-                lines={lines}
-                width={400}
-                height={200}
-                dualLine
-              />
-            </div>
-
-            {/* Waveform */}
-            <div className="flex-shrink-0">
-              <WaveformDisplay height={60} />
+              <LyricsOverlay />
             </div>
 
             {/* Info */}
@@ -89,6 +77,9 @@ export function MainLayout() {
           </div>
         </Panel>
       </div>
+
+      {/* Timeline (TimeRuler + Waveform + TimingTrack) */}
+      <TimelinePanel />
 
       {/* Playback controls */}
       <PlaybackControls />

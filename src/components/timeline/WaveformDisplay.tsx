@@ -4,6 +4,12 @@ import { useStore } from "../../store";
 interface WaveformDisplayProps {
   /** Optional override for the canvas height (default: 80) */
   height?: number;
+  /**
+   * Optional fixed width for the canvas (used inside TimelinePanel).
+   * When set, the container is sized to this width and the canvas fills it.
+   * When omitted, the container fills its parent width.
+   */
+  width?: number;
 }
 
 /**
@@ -12,7 +18,7 @@ interface WaveformDisplayProps {
  * Draws the waveform peaks from store data, overlays a playhead at the
  * current playback position, and colours the played portion differently.
  */
-export function WaveformDisplay({ height = 80 }: WaveformDisplayProps) {
+export function WaveformDisplay({ height = 80, width: fixedWidth }: WaveformDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +49,7 @@ export function WaveformDisplay({ height = 80 }: WaveformDisplayProps) {
 
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
-    const w = rect.width;
+    const w = fixedWidth ?? rect.width;
     const h = height;
 
     canvas.width = w * dpr;
