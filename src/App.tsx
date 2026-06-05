@@ -1,4 +1,3 @@
-import { useStore } from "./store";
 import { MainLayout } from "./components/layout/MainLayout";
 import { StatusBar } from "./components/layout/StatusBar";
 import { MenuBar } from "./components/layout/MenuBar";

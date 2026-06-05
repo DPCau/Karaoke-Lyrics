@@ -1,4 +1,5 @@
 mod commands;
+mod engine;
 
 use log::info;
 
@@ -12,8 +13,9 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
-            commands::media::open_media,
-            commands::media::get_waveform,
+            commands::media::media_open_video,
+            commands::media::media_open_audio,
+            commands::media::media_get_waveform,
             commands::project::load_project,
             commands::project::save_project,
             commands::export::export_project,

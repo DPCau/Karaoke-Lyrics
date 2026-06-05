@@ -21,7 +21,7 @@ export const createStyleSlice: StateCreator<
   [],
   [],
   StyleSlice
-> = (set, get) => ({
+> = (set, _get) => ({
   fontFamily: "Inter, system-ui, sans-serif",
   fontSize: 48,
   unsungColor: "#888888",
