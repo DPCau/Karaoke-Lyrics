@@ -58,6 +58,17 @@ npm run tauri build
 
 构建产物位于 `src-tauri/target/release/bundle/`。
 
+### macOS 安全提示
+
+macOS 用户首次打开应用时会遇到"无法打开"的安全提示，按以下步骤解决：
+
+1. 双击 `.dmg` 安装，拖拽应用到 Applications 文件夹
+2. 首次打开时会弹出"无法打开，因为无法验证开发者"
+3. 打开 **系统设置 → 隐私与安全性**，底部会显示被阻止的应用
+4. 点击 **"仍要打开"**
+5. 再次确认 **"打开"**
+6. 之后可正常使用，无需重复操作
+
 ## 📖 使用指南
 
 ### 基本工作流
@@ -173,6 +184,14 @@ docs/                         # 开发文档（本地私有）
 3. 提交更改 (`git commit -m 'Add amazing feature'`)
 4. 推送到分支 (`git push origin feature/amazing-feature`)
 5. 创建 Pull Request
+
+提交 PR 后，CI 会自动运行以下检查：
+
+- **TypeScript 编译检查** — 确保前端代码类型正确
+- **Rust 编译检查** — 确保后端代码编译通过
+- **Rust 测试** — 确保现有功能不受影响
+
+请确保所有 CI 检查通过后再请求 review。
 
 ## 📄 许可证
 

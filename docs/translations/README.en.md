@@ -58,6 +58,17 @@ npm run tauri build
 
 Build artifacts are located in `src-tauri/target/release/bundle/`.
 
+### macOS Security Notice
+
+macOS users will encounter a "cannot be opened" security warning when opening the app for the first time. Follow these steps to resolve it:
+
+1. Double-click the `.dmg` installer and drag the app to the Applications folder
+2. The first time you open it, you will see "cannot be opened because the developer cannot be verified"
+3. Open **System Settings → Privacy & Security**, the blocked app will be shown at the bottom
+4. Click **"Open Anyway"**
+5. Confirm **"Open"** again
+6. The app will work normally afterward with no repeated steps
+
 ## 📖 User Guide
 
 ### Basic Workflow
