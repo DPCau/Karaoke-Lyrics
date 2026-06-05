@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { LyricLine } from "../../types/lyrics";
 import {
   exportLrc,
@@ -49,6 +50,7 @@ const VIDEO_PRESETS = [
 // ---------------------------------------------------------------------------
 
 export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
+  const { t } = useTranslation();
   const [format, setFormat] = useState<ExportFormat>("lrc");
   const [encoding, setEncoding] = useState("utf-8");
   const [bom, setBom] = useState(false);
@@ -250,7 +252,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
       <div className="w-[520px] max-h-[85vh] bg-surface-1 border border-surface-3 rounded-xl shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-surface-3">
-          <h2 className="text-sm font-semibold text-white">Export</h2>
+          <h2 className="text-sm font-semibold text-white">{t("export.dialog")}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -267,7 +269,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Format selector */}
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Export Format</label>
+            <label className="block text-xs text-gray-400 mb-1.5">{t("export.format")}</label>
             <div className="grid grid-cols-4 gap-2">
               {(["lrc", "json", "ass", "video"] as const).map((fmt) => {
                 const isVideo = fmt === "video";
@@ -317,45 +319,41 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
             </div>
             {ffmpegInfo && !ffmpegInfo.found && (
               <p className="text-[10px] text-amber-500 mt-1">
-                FFmpeg not found. Video export requires FFmpeg.
+                {t("export.ffmpegNotFound")}
               </p>
             )}
           </div>
 
-          {/* Video-specific config */}
-          {(format === "ass" && false ? false : null) || null}
-
           {/* Metadata section */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">
-              Metadata
-              <span className="text-gray-600 ml-1">(optional)</span>
+              {t("export.dialog")} <span className="text-gray-600 ml-1">({t("common.info")})</span>
             </label>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
-                placeholder="Title"
+                placeholder={t("common.info")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
               />
               <input
                 type="text"
-                placeholder="Artist"
+                placeholder={t("common.info")}
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
               />
               <input
                 type="text"
-                placeholder="Album"
+                placeholder={t("common.info")}
                 value={album}
                 onChange={(e) => setAlbum(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
               />
               <input
                 type="text"
-                placeholder="Author"
+                placeholder={t("common.info")}
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 className="px-2.5 py-1.5 text-xs bg-surface-2 border border-surface-3 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
@@ -367,11 +365,11 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           {format === "lrc" && (
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">
-                LRC Options
+                LRC {t("export.format")}
               </label>
               <div className="space-y-2 bg-surface-2 rounded-lg p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">Encoding</span>
+                  <span className="text-xs text-gray-400">{t("export.format")}</span>
                   <select
                     value={encoding}
                     onChange={(e) => setEncoding(e.target.value)}
@@ -385,7 +383,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
                   </select>
                 </div>
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs text-gray-400">Enhanced word-level tags</span>
+                  <span className="text-xs text-gray-400">{t("export.dialog")}</span>
                   <input
                     type="checkbox"
                     checked={enhancedWordTags}
@@ -409,11 +407,11 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           {format === "json" && (
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">
-                JSON Options
+                JSON {t("export.format")}
               </label>
               <div className="space-y-2 bg-surface-2 rounded-lg p-3">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs text-gray-400">Compact format (word-level only)</span>
+                  <span className="text-xs text-gray-400">{t("export.dialog")}</span>
                   <input
                     type="checkbox"
                     checked={compactJson}
@@ -428,11 +426,11 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           {format === "ass" && (
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">
-                ASS Options
+                ASS {t("export.format")}
               </label>
               <div className="space-y-2 bg-surface-2 rounded-lg p-3">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs text-gray-400">Include pronunciation</span>
+                  <span className="text-xs text-gray-400">{t("pronunciation.panel")}</span>
                   <input
                     type="checkbox"
                     checked={includePronunciation}
@@ -447,7 +445,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           {/* Video preset (shown when video is conceptually active) */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">
-              Video Encoding Preset
+              {t("export.dialog")}
             </label>
             <select
               value={videoPreset}
@@ -467,7 +465,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-gray-400">
-                  {progress.stage === "encoding" ? "Encoding video..." : progress.stage}
+                  {t("export.exporting")}
                 </span>
                 <span className="text-xs text-gray-500">
                   {Math.round(progress.progress * 100)}%
@@ -499,7 +497,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
             disabled={exporting}
             className="px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-surface-2 hover:bg-surface-3 rounded-lg transition-colors disabled:opacity-50"
           >
-            Cancel
+            {t("export.cancel")}
           </button>
           <button
             type="button"
@@ -513,7 +511,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
-            {exporting ? "Exporting..." : format === "ass" ? "Export to Video" : "Export"}
+            {exporting ? t("export.exporting") : t("export.dialog")}
           </button>
         </div>
       </div>

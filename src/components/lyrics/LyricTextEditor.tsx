@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, type DragEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 import { TextParser } from "../../services/textParser";
 import { CharSplitter, type SplitToken } from "../../services/charSplitter";
@@ -50,6 +51,7 @@ function buildLinesFromData(
 }
 
 export function LyricTextEditor() {
+  const { t } = useTranslation();
   const setLines = useStore((s) => s.setLines);
   const lines = useStore((s) => s.lines);
 
@@ -196,7 +198,7 @@ export function LyricTextEditor() {
                      hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed
                      transition-colors"
         >
-          Import to Store
+          {t("common.save")}
         </button>
         <button
           type="button"
@@ -204,7 +206,7 @@ export function LyricTextEditor() {
           className="px-3 py-1 text-xs font-medium bg-surface-2 text-gray-300 rounded
                      hover:bg-surface-3 transition-colors"
         >
-          Open File...
+          {t("lyrics.importFile")}
         </button>
         <input
           ref={fileInputRef}
@@ -232,7 +234,7 @@ export function LyricTextEditor() {
           ref={textareaRef}
           value={rawInput}
           onChange={(e) => parseInput(e.target.value)}
-          placeholder={`Paste lyrics here, or drag-and-drop a .lrc / .srt / .ass / .txt file\n\nTip: Ctrl+Enter to import to store`}
+          placeholder={`${t("lyrics.pasteHere")}\n\nCtrl+Enter → ${t("common.save")}`}
           className="flex-1 resize-none bg-surface-1 border border-surface-3 rounded
                      p-3 text-sm text-gray-200 font-mono
                      placeholder:text-gray-600
@@ -244,11 +246,11 @@ export function LyricTextEditor() {
         {/* Preview panel */}
         <div className="w-64 flex-shrink-0 bg-surface-1 border border-surface-3 rounded overflow-y-auto">
           <div className="sticky top-0 bg-surface-2 px-3 py-1.5 border-b border-surface-3 text-[10px] uppercase tracking-wider text-gray-500 font-medium">
-            Preview ({previews.length} lines)
+            {t("lyrics.editor")} ({t("lyrics.lineCount", { count: previews.length })})
           </div>
           {previews.length === 0 && (
             <div className="flex items-center justify-center h-32 text-gray-600 text-xs">
-              No content
+              {t("media.noMedia")}
             </div>
           )}
           {previews.map((pre, i) => (
@@ -292,7 +294,7 @@ export function LyricTextEditor() {
         {isDragOver && (
           <div className="absolute inset-0 bg-accent/10 border-2 border-dashed border-accent/40 rounded flex items-center justify-center z-10 pointer-events-none">
             <span className="text-accent text-sm font-medium">
-              Drop file to import
+              {t("media.dropHere")}
             </span>
           </div>
         )}
@@ -301,7 +303,7 @@ export function LyricTextEditor() {
       {/* Store status */}
       {lines.length > 0 && (
         <div className="text-[10px] text-gray-600 px-1">
-          Store: {lines.length} line{lines.length !== 1 ? "s" : ""} loaded
+          {t("lyrics.lineCount", { count: lines.length })} loaded
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 
 function formatTime(ms: number): string {
@@ -10,6 +11,7 @@ function formatTime(ms: number): string {
 }
 
 export function StatusBar() {
+  const { t } = useTranslation();
   const currentTime = useStore((s) => s.currentTime);
   const duration = useStore((s) => s.duration);
   const isPlaying = useStore((s) => s.isPlaying);
@@ -26,7 +28,7 @@ export function StatusBar() {
             isPlaying ? "bg-green-500" : "bg-gray-600"
           }`}
         />
-        {isPlaying ? "Playing" : "Paused"}
+        {isPlaying ? t("status.playing") : t("status.paused")}
       </span>
 
       <span className="font-mono">{formatTime(currentTime)}</span>
@@ -42,7 +44,7 @@ export function StatusBar() {
       {isRecording && (
         <span className="text-red-400 font-medium flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          Recording #{currentMarkIndex}
+          {t("status.recording")} #{currentMarkIndex}
         </span>
       )}
 

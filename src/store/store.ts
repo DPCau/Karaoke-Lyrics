@@ -5,13 +5,15 @@ import { createTimingSlice, type TimingSlice } from "./timingSlice";
 import { createStyleSlice, type StyleSlice } from "./styleSlice";
 import { createProjectSlice, type ProjectSlice } from "./projectSlice";
 import { createUISlice, type UISlice } from "./uiSlice";
+import { createSettingsSlice, type SettingsSlice } from "./settingsSlice";
 
 export type AppStore = MediaSlice &
   LyricsSlice &
   TimingSlice &
   StyleSlice &
   ProjectSlice &
-  UISlice;
+  UISlice &
+  SettingsSlice;
 
 export const useStore = create<AppStore>()((...args) => ({
   ...createMediaSlice(...args),
@@ -20,4 +22,5 @@ export const useStore = create<AppStore>()((...args) => ({
   ...createStyleSlice(...args),
   ...createProjectSlice(...args),
   ...createUISlice(...args),
+  ...createSettingsSlice(...args),
 }));

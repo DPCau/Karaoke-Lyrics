@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { FontPicker } from "./FontPicker";
@@ -102,6 +103,7 @@ function MiniPreview() {
 // ---------------------------------------------------------------------------
 
 export function StylePanel() {
+  const { t } = useTranslation();
   const unsungColor = useStore((s) => s.unsungColor);
   const sungColor = useStore((s) => s.sungColor);
   const background = useStore((s) => s.background);
@@ -116,21 +118,21 @@ export function StylePanel() {
 
       <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
         {/* Presets */}
-        <CollapsibleSection title="Presets" defaultOpen={true}>
+        <CollapsibleSection title={t("style_panel.presets")} defaultOpen={true}>
           <StylePresetManager />
         </CollapsibleSection>
 
         {/* Font */}
-        <CollapsibleSection title="Font" defaultOpen={true}>
+        <CollapsibleSection title={t("style_panel.font")} defaultOpen={true}>
           <FontPicker />
         </CollapsibleSection>
 
         {/* Colors */}
-        <CollapsibleSection title="Colors" defaultOpen={true}>
+        <CollapsibleSection title={t("style_panel.colors")} defaultOpen={true}>
           <div className="space-y-3">
             <div>
               <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
-                Unsung Color
+                {t("style_panel.unsungColor")}
               </label>
               <ColorPicker
                 value={unsungColor}
@@ -140,7 +142,7 @@ export function StylePanel() {
             </div>
             <div>
               <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
-                Sung Color
+                {t("style_panel.sungColor")}
               </label>
               <ColorPicker
                 value={sungColor}
@@ -150,7 +152,7 @@ export function StylePanel() {
             </div>
             <div>
               <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
-                Background
+                {t("common.color")}
               </label>
               <ColorPickerRGBA
                 value={background}
@@ -162,32 +164,32 @@ export function StylePanel() {
         </CollapsibleSection>
 
         {/* Outline */}
-        <CollapsibleSection title="Outline" defaultOpen={false}>
+        <CollapsibleSection title={t("style_panel.outline")} defaultOpen={false}>
           <OutlineControls />
         </CollapsibleSection>
 
         {/* Shadow */}
-        <CollapsibleSection title="Shadow" defaultOpen={false}>
+        <CollapsibleSection title={t("style_panel.shadow")} defaultOpen={false}>
           <ShadowControls />
         </CollapsibleSection>
 
         {/* Glow */}
-        <CollapsibleSection title="Glow" defaultOpen={false}>
+        <CollapsibleSection title={t("style_panel.glow")} defaultOpen={false}>
           <GlowControls />
         </CollapsibleSection>
 
         {/* Sweep */}
-        <CollapsibleSection title="Sweep" defaultOpen={false}>
+        <CollapsibleSection title={t("style_panel.sweep")} defaultOpen={false}>
           <SweepControls />
         </CollapsibleSection>
 
         {/* Background Bar */}
-        <CollapsibleSection title="Background Bar" defaultOpen={false}>
+        <CollapsibleSection title={t("style_panel.backgroundBar")} defaultOpen={false}>
           <BackgroundBarControls />
         </CollapsibleSection>
 
         {/* Layout */}
-        <CollapsibleSection title="Layout" defaultOpen={false}>
+        <CollapsibleSection title={t("style_panel.layout")} defaultOpen={false}>
           <LayoutControls />
         </CollapsibleSection>
       </div>

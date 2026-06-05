@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, type DragEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 
 function formatDuration(ms: number): string {
@@ -23,6 +24,7 @@ function getFileLabel(path: string | null): string {
 }
 
 export function MediaPanel() {
+  const { t } = useTranslation();
   const videoPath = useStore((s) => s.videoPath);
   const audioPath = useStore((s) => s.audioPath);
   const duration = useStore((s) => s.duration);
@@ -129,19 +131,19 @@ export function MediaPanel() {
         <div className="space-y-2">
           <div className="bg-surface-1 border border-surface-3 rounded p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Video</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{t("media.importVideo")}</span>
               <span className="text-xs text-gray-400 truncate max-w-[180px]" title={videoPath ?? ""}>
                 {getFileLabel(videoPath)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Audio</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{t("media.importAudio")}</span>
               <span className="text-xs text-gray-400 truncate max-w-[180px]" title={audioPath ?? ""}>
                 {getFileLabel(audioPath)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Duration</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{t("media.duration")}</span>
               <span className="text-xs text-gray-300 font-mono">{formatDuration(duration)}</span>
             </div>
           </div>
@@ -153,14 +155,14 @@ export function MediaPanel() {
               onClick={() => handleFileSelect("video")}
               className="flex-1 px-3 py-1.5 text-xs font-medium bg-surface-2 text-gray-300 rounded hover:bg-surface-3 transition-colors"
             >
-              Replace Video
+              {t("media.importVideo")}
             </button>
             <button
               type="button"
               onClick={() => handleFileSelect("audio")}
               className="flex-1 px-3 py-1.5 text-xs font-medium bg-surface-2 text-gray-300 rounded hover:bg-surface-3 transition-colors"
             >
-              Replace Audio
+              {t("media.importAudio")}
             </button>
           </div>
         </div>
@@ -173,7 +175,7 @@ export function MediaPanel() {
             </svg>
           </div>
           <p className="text-sm text-center max-w-[200px]">
-            Drag & drop a media file or use the buttons below
+            {t("media.dropHere")}
           </p>
           <div className="flex gap-2">
             <button
@@ -181,14 +183,14 @@ export function MediaPanel() {
               onClick={() => handleFileSelect("video")}
               className="px-4 py-2 text-xs font-medium bg-accent text-white rounded hover:bg-accent-hover transition-colors"
             >
-              Open Video
+              {t("media.importVideo")}
             </button>
             <button
               type="button"
               onClick={() => handleFileSelect("audio")}
               className="px-4 py-2 text-xs font-medium bg-surface-2 text-gray-300 rounded hover:bg-surface-3 transition-colors"
             >
-              Open Audio
+              {t("media.importAudio")}
             </button>
           </div>
         </div>
@@ -214,7 +216,7 @@ export function MediaPanel() {
       {isDragOver && (
         <div className="absolute inset-0 bg-accent/10 border-2 border-dashed border-accent/40 rounded flex items-center justify-center z-10 pointer-events-none">
           <span className="text-accent text-sm font-medium">
-            Drop media file
+            {t("media.dropHere")}
           </span>
         </div>
       )}

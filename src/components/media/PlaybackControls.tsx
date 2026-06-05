@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 
 const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
@@ -12,6 +13,7 @@ function formatTime(ms: number): string {
 }
 
 export function PlaybackControls() {
+  const { t } = useTranslation();
   const isPlaying = useStore((s) => s.isPlaying);
   const currentTime = useStore((s) => s.currentTime);
   const duration = useStore((s) => s.duration);
@@ -52,7 +54,7 @@ export function PlaybackControls() {
         className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded
                    bg-surface-2 text-gray-300 hover:bg-surface-3 transition-colors
                    disabled:opacity-40 disabled:cursor-not-allowed"
-        title={isPlaying ? "Pause" : "Play"}
+        title={isPlaying ? t("status.paused") : t("status.playing")}
       >
         {isPlaying ? (
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -105,7 +107,7 @@ export function PlaybackControls() {
 
       {/* Speed selector */}
       <div className="flex items-center gap-1.5">
-        <label className="text-[10px] text-gray-500 uppercase tracking-wider">Speed</label>
+        <label className="text-[10px] text-gray-500 uppercase tracking-wider">{t("timing_panel.speed")}</label>
         <select
           value={playbackSpeed}
           onChange={handleSpeedChange}

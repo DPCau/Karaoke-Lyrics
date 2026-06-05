@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store";
 import * as pronunciationService from "../../services/pronunciationService";
 import type { PronunciationMode, Pronunciation } from "../../types/lyrics";
@@ -10,14 +11,6 @@ const MODES: PronunciationMode[] = [
   "romaji",
   "bopomofo",
 ];
-
-const MODE_LABELS: Record<string, string> = {
-  none: "Off",
-  pinyin: "Pinyin",
-  furigana: "Furigana",
-  romaji: "Romaji",
-  bopomofo: "Bopomofo",
-};
 
 interface EditingChar {
   lineIdx: number;
@@ -33,6 +26,7 @@ interface EditingChar {
  * Reads lines and pronunciation mode from the Zustand store.
  */
 export function PronunciationPanel() {
+  const { t } = useTranslation();
   const lines = useStore((s) => s.lines);
   const pronunciationMode = useStore((s) => s.pronunciationMode) as PronunciationMode;
   const updateCharPronunciation = useStore((s) => s.updateCharPronunciation);
@@ -94,7 +88,6 @@ export function PronunciationPanel() {
     for (const line of lines) {
       for (const ch of line.characters) {
         if (ch.pronunciation) {
-          // We can set to undefined by clearing; store handles this
           updateCharPronunciation(ch.id, null as unknown as Pronunciation);
         }
       }
@@ -167,10 +160,10 @@ export function PronunciationPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Pronunciation
+          {t("pronunciation.panel")}
         </h3>
         <span className="text-xs text-gray-500">
-          {annotatedCount}/{totalChars} annotated
+          {annotatedCount}/{totalChars}
         </span>
       </div>
 
@@ -186,7 +179,7 @@ export function PronunciationPanel() {
                 : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
-            {MODE_LABELS[mode]}
+            {t(`pronunciation.${mode}`)}
           </button>
         ))}
       </div>
@@ -202,7 +195,7 @@ export function PronunciationPanel() {
               : "bg-green-700 text-white hover:bg-green-600"
           }`}
         >
-          {isAnnotating ? "Annotating..." : "Annotate All"}
+          {isAnnotating ? t("common.loading") : t("pronunciation.annotateAll")}
         </button>
 
         <button
@@ -214,7 +207,7 @@ export function PronunciationPanel() {
               : "bg-green-800 text-white hover:bg-green-700"
           }`}
         >
-          Annotate Selected
+          {t("pronunciation.annotateSelected")}
         </button>
 
         <button
@@ -226,15 +219,14 @@ export function PronunciationPanel() {
               : "bg-red-800 text-white hover:bg-red-700"
           }`}
         >
-          Clear All
+          {t("pronunciation.clearAll")}
         </button>
 
         <button
           onClick={handleClearCache}
           className="px-3 py-1.5 text-xs rounded font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
-          title="Clear pronunciation cache"
         >
-          Clear Cache
+          {t("pronunciation.clearAll")}
         </button>
       </div>
 
@@ -242,7 +234,7 @@ export function PronunciationPanel() {
       <div className="max-h-48 overflow-y-auto border border-gray-700 rounded p-2 space-y-1">
         {lines.length === 0 && (
           <p className="text-xs text-gray-500 text-center py-2">
-            No lyrics loaded
+            {t("media.noMedia")}
           </p>
         )}
         {lines.map((line, li) => (
@@ -266,7 +258,6 @@ export function PronunciationPanel() {
                       ? "bg-blue-900/40 hover:bg-blue-800/60"
                       : "hover:bg-gray-700"
                   }`}
-                  title={`Click to edit "${ch.text}"`}
                 >
                   <span className="text-[10px] leading-tight text-blue-300">
                     {ch.pronunciation?.text ?? " "}
@@ -286,7 +277,7 @@ export function PronunciationPanel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-gray-800 rounded-lg p-4 shadow-xl w-72 border border-gray-600">
             <h4 className="text-sm font-semibold mb-3 text-white">
-              Edit Pronunciation:{" "}
+              {t("pronunciation.editPronunciation")}:{" "}
               <span className="text-lg">{editingChar.text}</span>
             </h4>
 
@@ -295,7 +286,7 @@ export function PronunciationPanel() {
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleEditKeyDown}
-              placeholder="Enter pinyin..."
+              placeholder={t("pronunciation.pinyin")}
               className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 mb-2"
               autoFocus
             />
@@ -315,8 +306,8 @@ export function PronunciationPanel() {
                     className="text-xs text-blue-400 hover:text-blue-300"
                   >
                     {showAlternatives === editingChar.charId
-                      ? "Hide alternatives"
-                      : `Show alternatives (${editingChar.currentPronunciation.alternatives.length})`}
+                      ? t("common.close")
+                      : `${t("common.confirm")} (${editingChar.currentPronunciation.alternatives.length})`}
                   </button>
 
                   {showAlternatives === editingChar.charId && (
@@ -342,13 +333,13 @@ export function PronunciationPanel() {
                 onClick={handleCancelEdit}
                 className="px-3 py-1.5 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleSaveEdit}
                 className="px-3 py-1.5 text-xs bg-blue-700 text-white rounded hover:bg-blue-600"
               >
-                Save
+                {t("common.save")}
               </button>
             </div>
           </div>
