@@ -15,7 +15,8 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            let menu = menu::create_app_menu(app)?;
+            // Default language is zh-CN; it will be overridden by user settings
+            let menu = menu::create_app_menu(app.handle(), "zh-CN")?;
             app.set_menu(menu)?;
             Ok(())
         })
@@ -40,6 +41,7 @@ pub fn run() {
             commands::pronunciation::pronunciation_annotate_batch,
             commands::system::system_detect_ffmpeg,
             commands::system::system_get_app_data_dir,
+            commands::system::update_menu_language,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

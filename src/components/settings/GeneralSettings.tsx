@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { invoke } from "@tauri-apps/api/core";
 import { useStore } from "../../store";
 
 export function GeneralSettings() {
@@ -12,6 +13,11 @@ export function GeneralSettings() {
       const lang = e.target.value as "zh-CN" | "zh-TW" | "ja-JP" | "en";
       updateSetting("general", { language: lang });
       i18n.changeLanguage(lang);
+      // Notify Rust side to rebuild the native menu with the new language.
+      // This is a no‑op if not running inside Tauri (e.g. dev browser).
+      invoke("update_menu_language", { lang }).catch(() => {
+        // Silently ignore — likely running outside Tauri
+      });
     },
     [updateSetting, i18n],
   );

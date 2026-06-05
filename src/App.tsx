@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { MainLayout } from "./components/layout/MainLayout";
 import { StatusBar } from "./components/layout/StatusBar";
@@ -31,6 +32,12 @@ export default function App() {
   useEffect(() => {
     if (settings.general.language && settings.general.language !== i18n.language) {
       i18n.changeLanguage(settings.general.language);
+      // Sync native macOS menu language on startup
+      invoke("update_menu_language", {
+        lang: settings.general.language,
+      }).catch(() => {
+        // Silently ignore — likely running outside Tauri
+      });
     }
   }, [settings.general.language, i18n]);
 
