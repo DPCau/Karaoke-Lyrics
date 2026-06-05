@@ -3,7 +3,6 @@ use crate::engine::export::types::{ExportLine, ExportOptions};
 use std::io::BufRead;
 use std::process::{Command, Stdio};
 use tauri::Emitter;
-use tauri::Emitter;
 
 // ---------------------------------------------------------------------------
 // Video exporter — renders timed lyrics onto video via FFmpeg ASS filter
