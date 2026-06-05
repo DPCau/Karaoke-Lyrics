@@ -63,9 +63,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-artifacts
-          find src-tauri/target -path "*/release/bundle/*" \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.msi" -o -name "*.nsis.zip" -o -name "*setup.exe" \) -not -name "*.sig" | while read f; do cp "$f" release-artifacts/; done
-          ls -la release-artifacts/ || echo "No artifacts found"
-          echo "ARTIFACT_COUNT=$(ls release-artifacts/ 2>/dev/null | wc -l)" >> $GITHUB_OUTPUT
+          find src-tauri/target -path "*/release/bundle/*" \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.msi" -o -name "*.nsis.zip" -o -name "*setup.exe" -o -name "*.exe" \) -not -name "*.sig" -exec cp -v {} release-artifacts/ \;
+          echo "=== Artifacts collected ==="
+          ls -lh release-artifacts/ || echo "No artifacts found"
 
       - name: Upload artifacts
         uses: softprops/action-gh-release@v2
