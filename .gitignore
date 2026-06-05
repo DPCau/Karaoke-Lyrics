@@ -4,3 +4,5 @@ src-tauri/target/
 *.log
 .DS_Store
 .claude/
+# 本地私有文档
+/docs/*.md
