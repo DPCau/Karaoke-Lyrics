@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { AppStore } from "./store";
 
-export type PanelId = "media" | "lyrics" | "preview";
+export type PanelId = "media" | "lyrics" | "preview" | "style";
 
 export interface UISlice {
   activePanel: PanelId;

@@ -18,6 +18,7 @@ import {
   type EasingType,
   type ClipRect,
 } from "./SweepEffect";
+import { PronunciationRenderer } from "./PronunciationRenderer";
 
 type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 type CanvasType = HTMLCanvasElement | OffscreenCanvas;
@@ -44,6 +45,7 @@ export class CanvasRenderer {
   private ctx: Ctx2D;
   private dpr: number;
   private measureCache: Map<string, number>;
+  private pronunciationRenderer: PronunciationRenderer | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -146,6 +148,13 @@ export class CanvasRenderer {
    */
   clearMeasureCache(): void {
     this.measureCache.clear();
+  }
+
+  /**
+   * Set (or clear) the pronunciation renderer for annotating characters.
+   */
+  setPronunciationRenderer(renderer: PronunciationRenderer | null): void {
+    this.pronunciationRenderer = renderer;
   }
 
   /**
@@ -333,6 +342,18 @@ export class CanvasRenderer {
       ctx.fillText(text, x, y);
 
       ctx.restore();
+    }
+
+    // Pronunciation annotation above the character
+    if (this.pronunciationRenderer) {
+      this.pronunciationRenderer.renderChar(
+        ctx,
+        char,
+        x,
+        y,
+        width,
+        style.font.size,
+      );
     }
   }
 

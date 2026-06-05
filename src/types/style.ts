@@ -13,6 +13,7 @@ export interface FontConfig {
   alignment: "left" | "center" | "right";
   verticalPosition: number;
   lineHeight: number;
+  letterSpacing: number;
 }
 
 export type FillDirection =
@@ -21,18 +22,30 @@ export type FillDirection =
   | "top-to-bottom"
   | "bottom-to-top";
 
+export type OutlineStyle = "outset" | "inset" | "center";
+
+export type EasingCurve =
+  | "linear"
+  | "ease-in"
+  | "ease-out"
+  | "ease-in-out";
+
+export type BarWidthMode = "text" | "line" | "full";
+
 export interface SweepConfig {
   enabled: boolean;
   color: string;
   glowWidth: number;
   direction: FillDirection;
   gradientWidth: number;
+  easing: EasingCurve;
 }
 
 export interface OutlineConfig {
   enabled: boolean;
   color: string;
   width: number;
+  style: OutlineStyle;
 }
 
 export interface ShadowConfig {
@@ -56,6 +69,7 @@ export interface BackgroundBarConfig {
   padding: number;
   borderRadius: number;
   opacity: number;
+  widthMode: BarWidthMode;
 }
 
 export interface LayoutConfig {

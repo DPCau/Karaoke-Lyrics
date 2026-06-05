@@ -1,0 +1,113 @@
+import { useStore } from "../../store";
+import {
+  SliderControl,
+  ToggleControl,
+  SelectControl,
+} from "./StyleControls";
+
+const FONT_FAMILIES = [
+  { value: "Inter, system-ui, sans-serif", label: "Inter" },
+  { value: "'SF Pro Display', -apple-system, sans-serif", label: "SF Pro Display" },
+  { value: "'Segoe UI', system-ui, sans-serif", label: "Segoe UI" },
+  { value: "'Noto Sans', system-ui, sans-serif", label: "Noto Sans" },
+  { value: "Impact, 'Arial Black', sans-serif", label: "Impact" },
+  { value: "Arial, Helvetica, sans-serif", label: "Arial" },
+  { value: "Verdana, Geneva, sans-serif", label: "Verdana" },
+  { value: "Georgia, serif", label: "Georgia" },
+  { value: "'Times New Roman', serif", label: "Times New Roman" },
+  { value: "'Courier New', monospace", label: "Courier New" },
+  { value: "Roboto, sans-serif", label: "Roboto" },
+  { value: "'Open Sans', sans-serif", label: "Open Sans" },
+  { value: "Montserrat, sans-serif", label: "Montserrat" },
+  { value: "Oswald, sans-serif", label: "Oswald" },
+];
+
+const WEIGHT_OPTIONS = [
+  { value: "300", label: "Light" },
+  { value: "400", label: "Regular" },
+  { value: "500", label: "Medium" },
+  { value: "600", label: "Semi" },
+  { value: "700", label: "Bold" },
+  { value: "800", label: "Heavy" },
+  { value: "900", label: "Black" },
+];
+
+export function FontPicker() {
+  const fontConfig = useStore((s) => s.fontConfig);
+  const setFontConfig = useStore((s) => s.setFontConfig);
+
+  return (
+    <div className="space-y-3">
+      {/* Font family */}
+      <SelectControl
+        label="Font Family"
+        value={fontConfig.family}
+        options={FONT_FAMILIES}
+        onChange={(v) => setFontConfig({ family: v })}
+      />
+
+      {/* Font size */}
+      <SliderControl
+        label="Size"
+        value={fontConfig.size}
+        min={12}
+        max={200}
+        step={1}
+        display={`${fontConfig.size}px`}
+        onChange={(v) => setFontConfig({ size: v })}
+      />
+
+      {/* Weight selector */}
+      <div>
+        <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
+          Weight
+        </label>
+        <div className="flex gap-1">
+          {WEIGHT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setFontConfig({ weight: Number(opt.value) })}
+              className={`flex-1 px-1 py-1 text-[10px] rounded transition-colors ${
+                fontConfig.weight === Number(opt.value)
+                  ? "bg-accent text-white"
+                  : "bg-surface-2 text-gray-400 hover:text-gray-200 hover:bg-surface-3"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Italic toggle */}
+      <ToggleControl
+        label="Italic"
+        value={fontConfig.italic}
+        onChange={(v) => setFontConfig({ italic: v })}
+      />
+
+      {/* Line height */}
+      <SliderControl
+        label="Line Height"
+        value={fontConfig.lineHeight}
+        min={0.8}
+        max={3.0}
+        step={0.1}
+        display={fontConfig.lineHeight.toFixed(1)}
+        onChange={(v) => setFontConfig({ lineHeight: v })}
+      />
+
+      {/* Letter spacing */}
+      <SliderControl
+        label="Letter Spacing"
+        value={fontConfig.letterSpacing}
+        min={-5}
+        max={20}
+        step={0.5}
+        display={`${fontConfig.letterSpacing}px`}
+        onChange={(v) => setFontConfig({ letterSpacing: v })}
+      />
+    </div>
+  );
+}

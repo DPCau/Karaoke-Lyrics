@@ -74,12 +74,14 @@ const DEFAULT_FONT: FontConfig = {
   alignment: "center",
   verticalPosition: 75,
   lineHeight: 1.4,
+  letterSpacing: 0,
 };
 
 const DEFAULT_OUTLINE: OutlineConfig = {
   enabled: false,
   color: "#000000",
   width: 1,
+  style: "outset",
 };
 
 const DEFAULT_SHADOW: ShadowConfig = {
@@ -103,6 +105,7 @@ const DEFAULT_SWEEP: SweepConfig = {
   glowWidth: 3,
   direction: "left-to-right" as FillDirection,
   gradientWidth: 0.3,
+  easing: "linear",
 };
 
 const DEFAULT_BACKGROUND_BAR: BackgroundBarConfig = {
@@ -111,6 +114,7 @@ const DEFAULT_BACKGROUND_BAR: BackgroundBarConfig = {
   padding: 16,
   borderRadius: 8,
   opacity: 0.6,
+  widthMode: "text",
 };
 
 const DEFAULT_LAYOUT: LayoutConfig = {
@@ -134,11 +138,11 @@ function presetClassic(): Partial<StyleSlice> {
     unsungColor: "#e0e0e0",
     sungColor: "#3b82f6",
     fontConfig: { ...DEFAULT_FONT, family: "Inter, system-ui, sans-serif", size: 48, weight: 700 },
-    outline: { enabled: false, color: "#000000", width: 1 },
+    outline: { enabled: false, color: "#000000", width: 1, style: "outset" },
     shadow: { enabled: true, color: "rgba(0,0,0,0.8)", blur: 4, offsetX: 0, offsetY: 2 },
     glow: { enabled: false, color: "#3b82f6", radius: 8, intensity: 50 },
-    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#3b82f6" },
-    backgroundBar: { enabled: false, color: "rgba(0,0,0,0.5)", padding: 16, borderRadius: 8, opacity: 0.6 },
+    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#3b82f6", easing: "linear" },
+    backgroundBar: { enabled: false, color: "rgba(0,0,0,0.5)", padding: 16, borderRadius: 8, opacity: 0.6, widthMode: "text" },
     layout: { ...DEFAULT_LAYOUT },
   };
 }
@@ -151,11 +155,11 @@ function presetModern(): Partial<StyleSlice> {
     unsungColor: "#aaaaaa",
     sungColor: "#f472b6",
     fontConfig: { ...DEFAULT_FONT, family: "'SF Pro Display', -apple-system, sans-serif", size: 42, weight: 600 },
-    outline: { enabled: false, color: "#000000", width: 1 },
+    outline: { enabled: false, color: "#000000", width: 1, style: "outset" },
     shadow: { enabled: true, color: "rgba(0,0,0,0.6)", blur: 6, offsetX: 0, offsetY: 3 },
     glow: { enabled: true, color: "#f472b6", radius: 10, intensity: 30 },
-    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#f472b6", direction: "left-to-right" as FillDirection },
-    backgroundBar: { enabled: false, color: "rgba(0,0,0,0.4)", padding: 14, borderRadius: 8, opacity: 0.5 },
+    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#f472b6", direction: "left-to-right" as FillDirection, easing: "ease-out" },
+    backgroundBar: { enabled: false, color: "rgba(0,0,0,0.4)", padding: 14, borderRadius: 8, opacity: 0.5, widthMode: "text" },
     layout: { ...DEFAULT_LAYOUT },
   };
 }
@@ -168,11 +172,11 @@ function presetNeon(): Partial<StyleSlice> {
     unsungColor: "#444444",
     sungColor: "#22d3ee",
     fontConfig: { ...DEFAULT_FONT, family: "'Segoe UI', system-ui, sans-serif", size: 56, weight: 800 },
-    outline: { enabled: true, color: "#000000", width: 2 },
+    outline: { enabled: true, color: "#000000", width: 2, style: "outset" },
     shadow: { enabled: true, color: "rgba(0,0,0,0.9)", blur: 3, offsetX: 0, offsetY: 1 },
     glow: { enabled: true, color: "#22d3ee", radius: 16, intensity: 80 },
-    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#22d3ee", direction: "left-to-right" as FillDirection },
-    backgroundBar: { enabled: true, color: "rgba(0,0,0,0.7)", padding: 20, borderRadius: 12, opacity: 0.7 },
+    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#22d3ee", direction: "left-to-right" as FillDirection, easing: "linear" },
+    backgroundBar: { enabled: true, color: "rgba(0,0,0,0.7)", padding: 20, borderRadius: 12, opacity: 0.7, widthMode: "line" },
     layout: { ...DEFAULT_LAYOUT },
   };
 }
@@ -185,11 +189,11 @@ function presetSubtle(): Partial<StyleSlice> {
     unsungColor: "#888888",
     sungColor: "#a3e635",
     fontConfig: { ...DEFAULT_FONT, family: "'Noto Sans', system-ui, sans-serif", size: 38, weight: 500 },
-    outline: { enabled: false, color: "#000000", width: 1 },
+    outline: { enabled: false, color: "#000000", width: 1, style: "outset" },
     shadow: { enabled: true, color: "rgba(0,0,0,0.4)", blur: 2, offsetX: 0, offsetY: 1 },
     glow: { enabled: false, color: "#a3e635", radius: 6, intensity: 20 },
-    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#a3e635", direction: "left-to-right" as FillDirection },
-    backgroundBar: { enabled: false, color: "rgba(0,0,0,0.3)", padding: 12, borderRadius: 6, opacity: 0.4 },
+    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#a3e635", direction: "left-to-right" as FillDirection, easing: "ease-in-out" },
+    backgroundBar: { enabled: false, color: "rgba(0,0,0,0.3)", padding: 12, borderRadius: 6, opacity: 0.4, widthMode: "text" },
     layout: { ...DEFAULT_LAYOUT },
   };
 }
@@ -202,11 +206,11 @@ function presetBold(): Partial<StyleSlice> {
     unsungColor: "#ffffff",
     sungColor: "#f97316",
     fontConfig: { ...DEFAULT_FONT, family: "Impact, 'Arial Black', sans-serif", size: 64, weight: 900 },
-    outline: { enabled: true, color: "#1a1a1a", width: 3 },
+    outline: { enabled: true, color: "#1a1a1a", width: 3, style: "outset" },
     shadow: { enabled: true, color: "rgba(0,0,0,0.9)", blur: 6, offsetX: 2, offsetY: 4 },
     glow: { enabled: true, color: "#f97316", radius: 12, intensity: 60 },
-    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#f97316", direction: "left-to-right" as FillDirection },
-    backgroundBar: { enabled: true, color: "rgba(0,0,0,0.8)", padding: 24, borderRadius: 4, opacity: 0.8 },
+    sweep: { ...DEFAULT_SWEEP, enabled: true, color: "#f97316", direction: "left-to-right" as FillDirection, easing: "linear" },
+    backgroundBar: { enabled: true, color: "rgba(0,0,0,0.8)", padding: 24, borderRadius: 4, opacity: 0.8, widthMode: "full" },
     layout: { ...DEFAULT_LAYOUT },
   };
 }

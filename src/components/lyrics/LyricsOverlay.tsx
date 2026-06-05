@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from "react";
 import { useStore } from "../../store";
 import { CanvasRenderer } from "../../engine/CanvasRenderer";
+import { PronunciationRenderer } from "../../engine/PronunciationRenderer";
 import type { LyricStyle } from "../../types/style";
 
 /**
@@ -27,10 +28,14 @@ export function LyricsOverlay() {
   const currentTimeRef = useRef(0);
   const linesRef = useRef(useStore.getState().lines);
 
+  // Pronunciation renderer (managed alongside CanvasRenderer)
+  const pronunciationRendererRef = useRef<PronunciationRenderer | null>(null);
+
   // Read store values individually (avoids full-store re-renders).
   // currentTime and lines are snapshotted into refs below.
   const currentTime = useStore((s) => s.currentTime);
   const lines = useStore((s) => s.lines);
+  const pronunciationMode = useStore((s) => s.pronunciationMode);
   const fontConfig = useStore((s) => s.fontConfig);
   const unsungColor = useStore((s) => s.unsungColor);
   const sungColor = useStore((s) => s.sungColor);
@@ -95,6 +100,13 @@ export function LyricsOverlay() {
     // Create renderer instance
     const renderer = new CanvasRenderer(canvas);
     rendererRef.current = renderer;
+
+    // Create pronunciation renderer and wire it to the canvas renderer
+    const pronRenderer = new PronunciationRenderer({
+      enabled: pronunciationMode !== "none",
+    });
+    pronunciationRendererRef.current = pronRenderer;
+    renderer.setPronunciationRenderer(pronRenderer);
 
     // Resize observer to match canvas to parent container
     const resizeObserver = new ResizeObserver((entries) => {
@@ -161,10 +173,11 @@ export function LyricsOverlay() {
       cancelAnimationFrame(rafRef.current);
       resizeObserver.disconnect();
       rendererRef.current = null;
+      pronunciationRendererRef.current = null;
     };
     // Only re-initialise when style or lines (structural) change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getStyle, linesHash]);
+  }, [getStyle, linesHash, pronunciationMode]);
 
   return (
     <div

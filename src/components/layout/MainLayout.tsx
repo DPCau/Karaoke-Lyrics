@@ -4,7 +4,7 @@ import { MediaPanel } from "../media/MediaPanel";
 import { LyricTextEditor } from "../lyrics/LyricTextEditor";
 import { PlaybackControls } from "../media/PlaybackControls";
 import { TimelinePanel } from "../timeline/TimelinePanel";
-import { LyricsOverlay } from "../lyrics/LyricsOverlay";
+import { StylePanel } from "../style/StylePanel";
 
 interface PanelProps {
   id: string;
@@ -43,8 +43,6 @@ function Panel({ id, title, children, className = "" }: PanelProps) {
 }
 
 export function MainLayout() {
-  const lines = useStore((s) => s.lines);
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-surface-0">
       {/* Main panels */}
@@ -61,20 +59,8 @@ export function MainLayout() {
 
         <div className="w-px bg-surface-3" />
 
-        <Panel id="preview" title="Preview">
-          <div className="flex flex-col gap-3 h-full">
-            {/* Lyrics overlay preview */}
-            <div className="flex-1 relative bg-black/40 rounded overflow-hidden min-h-[120px]">
-              <LyricsOverlay />
-            </div>
-
-            {/* Info */}
-            <div className="flex-shrink-0 text-[10px] text-gray-600 text-center">
-              {lines.length > 0
-                ? `${lines.length} line${lines.length !== 1 ? "s" : ""} loaded`
-                : "No lyrics loaded"}
-            </div>
-          </div>
+        <Panel id="style" title="Style">
+          <StylePanel />
         </Panel>
       </div>
 

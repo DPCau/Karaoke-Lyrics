@@ -18,7 +18,17 @@ pub fn run() {
             commands::media::media_get_waveform,
             commands::project::load_project,
             commands::project::save_project,
+            commands::project::project_save,
+            commands::project::project_load,
             commands::export::export_project,
+            commands::export::export_lrc,
+            commands::export::export_json,
+            commands::export::export_ass,
+            commands::export::export_video,
+            commands::pronunciation::pronunciation_lookup,
+            commands::pronunciation::pronunciation_annotate_batch,
+            commands::system::system_detect_ffmpeg,
+            commands::system::system_get_app_data_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
