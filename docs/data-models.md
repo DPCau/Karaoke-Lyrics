@@ -73,11 +73,10 @@ interface LyricChar {
   /** 该单元的结束时间（毫秒），未打轴时为null */
   endTime: number | null;
 
-  /** 持续时间（毫秒），endTime - startTime 的缓存值，方便计算 */
-  get duration(): number | null {
-    if (this.startTime === null || this.endTime === null) return null;
-    return this.endTime - this.startTime;
-  }
+  /** 持续时间（毫秒），endTime - startTime。
+   *   派生值：序列化时写入，反序列化时从 startTime/endTime 重新计算。
+   *   不要在 TypeScript interface 中使用 getter 语法（interface 不支持方法体）。 */
+  duration: number | null;
 
   /** 是否为标点符号（标点默认附加到前一个单元，不单独打轴） */
   isPunctuation: boolean;
@@ -728,13 +727,16 @@ Style: Default,Microsoft YaHei,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:12.34,0:00:15.67,Default,,0,0,0,,{\kf$123}歌{\kf$134}词{\kf$130}制{\kf$139}作
+Dialogue: 0,0:00:12.34,0:00:15.67,Default,,0,0,0,,{\kf123}歌{\kf134}词{\kf130}制{\kf139}作
 ```
 
 规则：
-- `\kf` 标签后跟的 `$` 后数字是**百分之一秒**的持续时间
-- 如 `{\kf$123}` 表示该字持续123厘秒 = 1.23秒
-- \kf 是"karaoke fill"的缩写，表示从字开始后多久完成填充
+- `\k` 标签后直接跟数字（厘秒，1=0.01秒），**不要加 `$` 等分隔符**，否则参数解析失败（遇到非数字字符即停止）
+- 如 `{\k123}` 表示该字持续123厘秒 = 1.23秒
+- `\k` = 卡拉OK扫色（从 SecondaryColour 过渡到 PrimaryColour）
+- `\K` = 同 `\k` 但结束时带平滑渐隐过渡（推荐）
+- `\kf` = 扫色完成后渐隐，适合平滑的卡拉OK效果
+- **ASS 颜色 Alpha 反转**：`&H00` = 不透明, `&HFF` = 透明（与 RGBA 相反）
 
 ---
 
@@ -1075,7 +1077,21 @@ interface ExportConfig {
     videoBitrateMbps: number;
     audioBitrateKbps: number;
     encoderPreset: 'ultrafast' | 'superfast' | 'veryfast' | 'medium' | 'slow';
-    renderingMode: 'ffmpeg_drawtext' | 'frame_sequence' | 'auto';
+    renderingMode: 'ffmpeg_ass' | 'frame_sequence' | 'auto';
+    // 'ffmpeg_ass' = 生成ASS + FFmpeg ass滤镜（推荐，原生逐字扫色）
+    // 'frame_sequence' = Canvas逐帧渲染 → FFmpeg合成（高质量备选，V2）
+    // 以下为 ffmpeg_ass 模式必需的样式参数：
+    assStyle?: {
+      fontFamily?: string;         // 字体族名
+      fontSize?: number;            // 字号
+      unsungColorHex?: string;      // 未唱颜色 ABGR hex（如 &H00FFFFFF = 不透明白色）
+      sungColorHex?: string;        // 已唱颜色 ABGR hex
+      outlineColorHex?: string;     // 描边颜色 ABGR hex
+      outlineWidth?: number;        // 描边宽度
+      bold?: boolean;
+      italic?: boolean;
+    };
+    snapToFrameBoundary?: boolean;  // 帧对齐（默认 true）
   };
 
   // === LRC导出专属设置 ===

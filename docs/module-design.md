@@ -211,11 +211,12 @@ src-tauri/
 │   │   │
 │   │   ├── export/                      #     导出引擎
 │   │   │   ├── mod.rs
-│   │   │   ├── video_exporter.rs      #       视频导出
+│   │   │   ├── video_exporter.rs      #       视频导出（ASS滤镜方案）
+│   │   │   ├── ass_generator.rs       #       ASS字幕内容生成（歌词→ASS）
 │   │   │   ├── lrc_exporter.rs        #       LRC导出
 │   │   │   ├── json_exporter.rs       #       JSON导出
-│   │   │   ├── ass_exporter.rs        #       ASS导出
-│   │   │   └── ffmpeg_pipeline.rs     #       FFmpeg管道构建
+│   │   │   ├── ass_exporter.rs        #       ASS文件导出
+│   │   │   └── ffmpeg_pipeline.rs     #       FFmpeg进程管理与进度解析
 │   │   │
 │   │   └── pronunciation/              #     注音引擎
 │   │       ├── mod.rs
@@ -359,19 +360,43 @@ class CanvasRenderer {
 
     ctx.save();
 
-    // === 阴影 ===
+    // === 阴影（使用 strokeText 偏移替代 shadowBlur，避免性能杀手） ===
     if (style.shadow.enabled) {
-      ctx.shadowOffsetX = style.shadow.offsetX;
-      ctx.shadowOffsetY = style.shadow.offsetY;
-      ctx.shadowBlur = style.shadow.blur;
-      ctx.shadowColor = rgbaToString(style.shadow.color);
+      const shadowAlpha = style.shadow.color.a;
+      const shadowColor = rgbaToString({ ...style.shadow.color, a: 1 });
+      // 2-3 层偏移叠加模拟模糊效果
+      // 内层实心：无模糊的核心阴影
+      ctx.fillStyle = rgbaToString({ ...style.shadow.color });
+      ctx.fillText(char.text, x + style.shadow.offsetX, y + height + style.shadow.offsetY);
+      // 外层半透明：模拟模糊扩散（仅当 blur > 0）
+      if (style.shadow.blur > 0) {
+        ctx.globalAlpha = shadowAlpha * 0.3;
+        const spread = Math.ceil(style.shadow.blur / 2);
+        for (let i = -spread; i <= spread; i += Math.max(1, spread)) {
+          for (let j = -spread; j <= spread; j += Math.max(1, spread)) {
+            if (i === 0 && j === 0) continue;
+            ctx.fillText(char.text,
+              x + style.shadow.offsetX + i,
+              y + height + style.shadow.offsetY + j);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
     }
 
     // === 描边 ===
     if (style.outline.enabled) {
       ctx.strokeStyle = rgbaToString(style.outline.color);
       ctx.lineWidth = style.outline.width;
-      // lineJoin, miterLimit 根据style设置
+      ctx.lineJoin = 'round';
+      // 通过多次偏移 strokeText 模拟外描边，避免依赖 shadowBlur
+      const strokeCount = Math.ceil(style.outline.width);
+      for (let sx = -strokeCount; sx <= strokeCount; sx++) {
+        for (let sy = -strokeCount; sy <= strokeCount; sy++) {
+          if (Math.abs(sx) + Math.abs(sy) > strokeCount * 1.5) continue;
+          ctx.strokeText(char.text, x + sx, y + height + sy);
+        }
+      }
     }
 
     // === 绘制文字（两次：未唱+已唱） ===
@@ -384,7 +409,6 @@ class CanvasRenderer {
     // 1. 先绘制未唱颜色（整个文字）
     ctx.fillStyle = rgbaToString(style.unsungColor);
     ctx.fillText(char.text, x, y + height);
-    if (style.outline.enabled) ctx.strokeText(char.text, x, y + height);
 
     // 2. 使用裁剪区域绘制已唱颜色
     ctx.save();
@@ -403,19 +427,20 @@ class CanvasRenderer {
     }
 
     ctx.fillText(char.text, x, y + height);
-    if (style.outline.enabled) ctx.strokeText(char.text, x, y + height);
 
     ctx.restore();
 
-    // === 发光 ===
+    // === 发光效果（用多次半透明 strokeText 逐级放大模拟，避免 shadowBlur） ===
     if (style.glow.enabled && fillRatio > 0) {
-      ctx.shadowColor = rgbaToString(style.glow.color);
-      ctx.shadowBlur = style.glow.radius * style.glow.intensity;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      // 只对已唱部分加发光
-      ctx.fillStyle = rgbaToString({ ...style.sungColor, a: 0 }); // 透明填充
-      ctx.fillText(char.text, x, y + height);
+      const glowColor = style.glow.color;
+      const steps = Math.ceil(style.glow.radius * style.glow.intensity);
+      for (let i = 1; i <= steps; i++) {
+        const alpha = glowColor.a * (1 - i / steps) * 0.5;
+        ctx.strokeStyle = rgbaToString({ ...glowColor, a: alpha });
+        ctx.lineWidth = i * 1.5;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(char.text, x, y + height);
+      }
     }
 
     ctx.restore();
@@ -966,6 +991,7 @@ type TimingState =
 class TimingEngine {
   private state: TimingState = 'IDLE';
   private store: UseStore;
+  private timingStrategy: TimingStrategy = 'REALTIME';
 
   /** 处理打轴按键 */
   handleMarkKey(currentTime: number): void {
@@ -998,9 +1024,9 @@ class TimingEngine {
     }
   }
 
-  /** 处理退格键（撤销上一个标记） */
-  handleUndoMark(): void {
-    if (this.state !== 'PAUSED') return;
+  /** 处理退格键（撤销上一个标记）—— 在 PAUSED 和 PLAYING_AND_MARKING 状态均可工作 */
+  handleUndoMark(currentTime: number): void {
+    if (this.state === 'IDLE' || this.state === 'COMPLETED') return;
 
     const { lines } = this.store.getState().lyrics;
     const { currentMarkIndex } = this.store.getState().timing;
@@ -1009,11 +1035,26 @@ class TimingEngine {
       const newIndex = currentMarkIndex - 1;
       const char = this.getCharByGlobalIndex(lines, newIndex);
       if (char) {
-        // 清除该字的时间标记
+        // 清除该字及后续所有字的时间标记（连锁撤销）
         this.store.updateCharTiming(char.id, null, null);
         this.store.setCurrentMarkIndex(newIndex);
+
+        // 如果在播放中撤销，回退音频到上一个字的 startTime
+        if (this.state === 'PLAYING_AND_MARKING' && char.startTime !== null) {
+          this.store.setSeekTarget(char.startTime);
+        }
       }
     }
+  }
+
+  /** 标记当前行为间奏行并跳到下一行 */
+  handleSkipLine(): void {
+    const { lines, selectedLineIndex } = this.store.getState().lyrics;
+    const { currentMarkIndex } = this.store.getState().timing;
+    if (selectedLineIndex < 0 || selectedLineIndex >= lines.length) return;
+    this.store.updateLine(lines[selectedLineIndex].id, { isSkipped: true });
+    // 跳到下一个非间奏行的第一个字
+    this.advanceToNextNonSkippedLine(selectedLineIndex);
   }
 
   /** 标记当前字 */
@@ -1112,7 +1153,57 @@ class TimingEngine {
     }
     return null;
   }
+
+  /** 开始打轴——为第一个字设置 startTime */
+  private startMarking(currentTime: number): void {
+    const { lines } = this.store.getState().lyrics;
+    const firstChar = this.getCharByGlobalIndex(lines, 0);
+    if (!firstChar) return;
+
+    const adjusted = this.applySnap(currentTime);
+    this.store.updateCharTiming(firstChar.id, adjusted, null);
+    this.store.setCurrentMarkIndex(0);
+    this.store.setPlaying(true);
+    this.state = 'PLAYING_AND_MARKING';
+  }
+
+  /** 恢复打轴（从 PAUSED 状态） */
+  private resumeMarking(currentTime: number): void {
+    this.store.setPlaying(true);
+    this.state = 'PLAYING_AND_MARKING';
+  }
+
+  /** 跳转到下一个非间奏行 */
+  private advanceToNextNonSkippedLine(fromIndex: number): void {
+    const { lines } = this.store.getState().lyrics;
+    for (let i = fromIndex + 1; i < lines.length; i++) {
+      if (!lines[i].isSkipped) {
+        this.store.selectLine(i);
+        const firstChar = lines[i].characters.find(c => !c.isSpace && !c.isPunctuation);
+        if (firstChar) {
+          this.store.setCurrentMarkIndex(this.getGlobalIndex(lines, firstChar.id));
+        }
+        return;
+      }
+    }
+  }
+
+  /** 获取指定 charId 的全局索引 */
+  private getGlobalIndex(lines: LyricLine[], charId: string): number {
+    let count = 0;
+    for (const line of lines) {
+      for (const char of line.characters) {
+        if (char.isSpace || char.isPunctuation) continue;
+        if (char.id === charId) return count;
+        count++;
+      }
+    }
+    return -1;
+  }
 }
+
+/** 打轴策略类型 */
+type TimingStrategy = 'REALTIME' | 'TAP' | 'SENTENCE_DISTRIBUTE';
 ```
 
 ---
@@ -1341,79 +1432,274 @@ class WaveformRenderer {
 
 ## 6. 视频播放模块
 
-### 6.1 VideoPlayer组件
+### 6.0 时间源架构（关键设计）
+
+**问题**：HTML5 `video.currentTime` 精度不足（~250ms更新间隔），且 seek 后可能跳变。不适合需要精确计时的打轴和扫色场景。
+
+**解决方案**：使用 **Web Audio API** 的 `AudioContext.currentTime` 作为精确时钟源，但需要通过 **PlaybackClock** 类将其映射到视频播放位置。
+
+#### 关键认知：AudioContext.currentTime ≠ 视频播放位置
+
+`AudioContext.currentTime` 是从 AudioContext 创建时刻开始单调递增的硬件时钟——它**不会在暂停时停止，也不会在 seek 时跳转**。直接将 `ctx.currentTime * 1000` 用作播放时间会导致：
+1. 暂停时时间继续推进（用户看到歌词持续扫色）
+2. seek 后时间偏移错乱（AudioContext 不感知 `video.currentTime` 被设置）
+3. 降速播放时 AudioContext 仍以 1x 前进（0.5x 播放时扫色速度快两倍）
+
+#### PlaybackClock：双锚点时钟追踪系统
 
 ```typescript
-function VideoPlayer({ videoPath }: { videoPath: string | null }) {
+/**
+ * PlaybackClock — 将 AudioContext 单调时钟映射到视频/音频播放位置。
+ *
+ * 核心原理：维护"基底视频时间"和"基底音频时钟时间"两个锚点。
+ * Seek/Pause/Resume/PlaybackRate 变化时重新锚定，确保时间始终正确。
+ *
+ * 真实播放位置 = baseVideoTime + (audioCtx.currentTime - baseAudioTime) * playbackRate
+ */
+class PlaybackClock {
+  private audioCtx: AudioContext;
+  private baseVideoTime: number = 0;   // 锚点：上一次 seek/恢复时的视频位置(ms)
+  private baseAudioTime: number = 0;   // 锚点：对应时刻的 audioCtx.currentTime(ms)
+  private playbackRate: number = 1.0;
+  private isPlaying: boolean = false;
+  private frozenTime: number = 0;      // 暂停时冻结的时间(ms)
+
+  constructor(audioCtx: AudioContext) {
+    this.audioCtx = audioCtx;
+  }
+
+  /** 获取当前精确播放位置（毫秒） */
+  getCurrentTimeMs(): number {
+    if (!this.isPlaying) {
+      return this.frozenTime;
+    }
+    const elapsed = (this.audioCtx.currentTime * 1000 - this.baseAudioTime) * this.playbackRate;
+    return this.baseVideoTime + elapsed;
+  }
+
+  /** Seek：重新锚定到新的视频位置 */
+  seekTo(videoTimeMs: number): void {
+    this.baseVideoTime = videoTimeMs;
+    this.baseAudioTime = this.audioCtx.currentTime * 1000;
+    this.frozenTime = videoTimeMs;
+  }
+
+  /** 开始播放/从暂停恢复 */
+  play(): void {
+    if (this.isPlaying) return;
+    // 重新锚定：baseVideoTime = 当前冻结时间，baseAudioTime = 当前 audioCtx 时间
+    this.baseVideoTime = this.frozenTime;
+    this.baseAudioTime = this.audioCtx.currentTime * 1000;
+    this.isPlaying = true;
+  }
+
+  /** 暂停 */
+  pause(): void {
+    if (!this.isPlaying) return;
+    // 冻结当前计算出的时间
+    this.frozenTime = this.getCurrentTimeMs();
+    this.isPlaying = false;
+  }
+
+  /** 设置播放速率 */
+  setPlaybackRate(rate: number): void {
+    // 重锚点以避免速率变化导致的时间跳变
+    this.frozenTime = this.getCurrentTimeMs();
+    this.baseVideoTime = this.frozenTime;
+    this.baseAudioTime = this.audioCtx.currentTime * 1000;
+    this.playbackRate = rate;
+  }
+
+  reset(): void {
+    this.baseVideoTime = 0;
+    this.baseAudioTime = this.audioCtx.currentTime * 1000;
+    this.frozenTime = 0;
+    this.isPlaying = false;
+    this.playbackRate = 1.0;
+  }
+}
+```
+
+#### 渲染循环中的使用
+
+```typescript
+// 将 video 元素连接到 AudioContext
+const audioCtx = new AudioContext();
+const source = audioCtx.createMediaElementSource(videoElement);
+source.connect(audioCtx.destination);
+
+const clock = new PlaybackClock(audioCtx);
+
+// Seek 事件 → 重新锚定
+videoElement.addEventListener('seeked', () => {
+  clock.seekTo(videoElement.currentTime * 1000);
+});
+
+// 渲染循环使用 PlaybackClock 获取正确时间
+function renderLoop() {
+  const preciseTimeMs = clock.getCurrentTimeMs();
+  store.setCurrentTime(preciseTimeMs);
+  canvasRenderer.render(preciseTimeMs, lyrics, style);
+  requestAnimationFrame(renderLoop);
+}
+
+// 播放/暂停通过 PlaybackClock 管理
+function onPlay()  { clock.play();  store.setPlaying(true);  }
+function onPause() { clock.pause(); store.setPlaying(false); }
+```
+
+**平台兼容性**：Web Audio API 在所有主流 WebView 中均支持（WebView2/WKWebView/WebKitGTK）。Firefox 指纹保护降精度模式下仍有 2ms 精度，对歌词扫色（100-500ms/字）完全够用。
+
+### 6.1 VideoPlayer组件（含纯音频回退路径）
+
+```typescript
+interface VideoPlayerProps {
+  videoPath: string | null;
+  audioPath: string | null;  // 纯音频导入（无视频轨道）
+}
+
+function VideoPlayer({ videoPath, audioPath }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);        // 纯音频回退元素
+  const clockRef = useRef<PlaybackClock | null>(null);
   const store = useStore();
+  const isAudioOnly = !videoPath && !!audioPath;
 
-  // 同步视频时间到store
+  // 根据媒体类型选择播放元素
+  const getMediaElement = (): HTMLMediaElement | null =>
+    videoRef.current ?? audioRef.current;
+
+  // 初始化 AudioContext + PlaybackClock
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    const mediaEl = getMediaElement();
+    if (!mediaEl) return;
 
-    const onTimeUpdate = () => {
-      store.setCurrentTime(video.currentTime * 1000);
+    const initClock = () => {
+      if (clockRef.current) return;
+      const ctx = new AudioContext();
+      const source = ctx.createMediaElementSource(mediaEl);
+      source.connect(ctx.destination);
+      clockRef.current = new PlaybackClock(ctx);
     };
 
-    const onPlay = () => store.setPlaying(true);
-    const onPause = () => store.setPlaying(false);
+    mediaEl.addEventListener('play', initClock, { once: true });
+    return () => mediaEl.removeEventListener('play', initClock);
+  }, [videoPath, audioPath]);
 
-    video.addEventListener('timeupdate', onTimeUpdate);
-    video.addEventListener('play', onPlay);
-    video.addEventListener('pause', onPause);
-
-    return () => {
-      video.removeEventListener('timeupdate', onTimeUpdate);
-      video.removeEventListener('play', onPlay);
-      video.removeEventListener('pause', onPause);
+  // Seek 事件 → PlaybackClock 重新锚定
+  useEffect(() => {
+    const mediaEl = getMediaElement();
+    if (!mediaEl) return;
+    const onSeeked = () => {
+      clockRef.current?.seekTo(mediaEl.currentTime * 1000);
     };
+    mediaEl.addEventListener('seeked', onSeeked);
+    return () => mediaEl.removeEventListener('seeked', onSeeked);
+  }, [videoPath, audioPath]);
+
+  // 渲染循环：通过 PlaybackClock 获取精确时间
+  useEffect(() => {
+    let animId: number;
+    const loop = () => {
+      const clock = clockRef.current;
+      const mediaEl = getMediaElement();
+      if (clock && mediaEl && !mediaEl.paused) {
+        store.setCurrentTime(clock.getCurrentTimeMs());
+      } else if (mediaEl) {
+        // 还未初始化 AudioContext 时回退到 mediaEl.currentTime
+        store.setCurrentTime(mediaEl.currentTime * 1000);
+      }
+      animId = requestAnimationFrame(loop);
+    };
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
   }, []);
 
-  // 外部时间变化 -> 同步到video
+  // 播放/暂停 → PlaybackClock 同步
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    const mediaEl = getMediaElement();
+    if (!mediaEl) return;
+    const onPlay  = () => { clockRef.current?.play();  store.setPlaying(true);  };
+    const onPause = () => { clockRef.current?.pause(); store.setPlaying(false); };
+    mediaEl.addEventListener('play', onPlay);
+    mediaEl.addEventListener('pause', onPause);
+    return () => {
+      mediaEl.removeEventListener('play', onPlay);
+      mediaEl.removeEventListener('pause', onPause);
+    };
+  }, [videoPath, audioPath]);
 
-    const targetTime = store.seekTarget;
-    if (targetTime !== null && Math.abs(video.currentTime * 1000 - targetTime) > 50) {
-      video.currentTime = targetTime / 1000;
+  // 外部 seek → 同步到媒体元素
+  useEffect(() => {
+    const mediaEl = getMediaElement();
+    if (!mediaEl) return;
+    const target = store.seekTarget;
+    if (target !== null && Math.abs(mediaEl.currentTime * 1000 - target) > 50) {
+      mediaEl.currentTime = target / 1000;
       store.clearSeekTarget();
     }
   }, [store.seekTarget]);
 
-  // 外部播放控制 -> 同步到video
+  // 外部播放/暂停控制
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (store.isPlaying && video.paused) {
-      video.play();
-    } else if (!store.isPlaying && !video.paused) {
-      video.pause();
-    }
+    const mediaEl = getMediaElement();
+    if (!mediaEl) return;
+    if (store.isPlaying && mediaEl.paused) mediaEl.play().catch(() => {});
+    else if (!store.isPlaying && !mediaEl.paused) mediaEl.pause();
   }, [store.isPlaying]);
 
   // 播放速度同步
   useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.playbackRate = store.playbackSpeed;
+    const mediaEl = getMediaElement();
+    if (mediaEl) {
+      mediaEl.playbackRate = store.playbackSpeed;
+      clockRef.current?.setPlaybackRate(store.playbackSpeed);
     }
   }, [store.playbackSpeed]);
 
-  if (!videoPath) {
-    return <div className="no-video-placeholder">请导入视频文件</div>;
+  // 错误状态处理
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const handleError = (e: React.SyntheticEvent<HTMLMediaElement>) => {
+    const el = e.currentTarget;
+    const code = el.error?.code;
+    const messages: Record<number, string> = {
+      1: '媒体加载被用户中止',
+      2: '网络错误',
+      3: '媒体解码失败——文件可能已损坏或编码格式不支持',
+      4: '媒体文件未找到或格式不受支持',
+    };
+    setLoadError(messages[code ?? 0] || `播放错误 (code: ${code})`);
+  };
+
+  if (!videoPath && !audioPath) {
+    return <div className="no-media-placeholder">请导入视频或音频文件</div>;
   }
 
+  if (loadError) {
+    return <div className="media-error">媒体错误：{loadError}</div>;
+  }
+
+  // 纯音频模式：隐藏 <audio> + Canvas 歌词叠加
+  if (isAudioOnly) {
+    return (
+      <audio
+        ref={audioRef}
+        src={convertFileSrc(audioPath!)}
+        preload="auto"
+        onError={handleError}
+      />
+    );
+  }
+
+  // 视频模式：<video> + Canvas 歌词叠加
   return (
     <video
       ref={videoRef}
-      src={convertFileSrc(videoPath)}
+      src={convertFileSrc(videoPath!)}
       style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       crossOrigin="anonymous"
       preload="auto"
+      onError={handleError}
     />
   );
 }
@@ -1860,13 +2146,15 @@ pub async fn load_project(path: String) -> Result<String, String> {
 
 ## 11. 导出引擎（Rust）
 
-### 11.1 FFmpeg视频导出
+### 11.1 FFmpeg视频导出（ASS滤镜方案）
+
+**设计决策**：经过调研确认，FFmpeg `drawtext` 滤镜无法实现逐字扫色（最小操作单位是整个字符串）。正确方案是**生成ASS字幕文件 + FFmpeg `ass` 滤镜渲染**。
 
 ```rust
 // src-tauri/src/engine/export/video_exporter.rs
 
 use std::process::Command;
-use std::io::Write;
+use std::fs;
 
 pub struct VideoExportConfig {
     pub input_video: String,
@@ -1878,27 +2166,39 @@ pub struct VideoExportConfig {
     pub audio_bitrate: String,     // 如 "192k"
     pub encoder_preset: String,    // 如 "medium"
     pub lyrics_data: String,       // JSON歌词数据
-    pub font_file: Option<String>,
+    pub font_dir: Option<String>,  // 字体目录（可选）
 }
 
-/// 使用FFmpeg导出带字幕的视频
+/// 使用FFmpeg + ASS滤镜导出带卡拉OK字幕的视频
 ///
-/// 采用方式A（drawtext滤镜）快速导出。
-/// 对于复杂效果，后续可实现方式B（逐帧渲染）。
+/// 流程：
+///   1. 从歌词数据生成临时 ASS 文件（包含逐字 \\k 扫色标签）
+///   2. 调用 ffmpeg -vf "ass=temp.ass" 渲染
+///   3. 清理临时 ASS 文件
 pub fn export_video(config: VideoExportConfig) -> Result<(), String> {
-    let lyrics: Vec<LyricOverlay> = parse_lyrics_for_ffmpeg(&config.lyrics_data)?;
+    let lyrics: Vec<LyricLineForExport> = parse_lyrics_for_export(&config.lyrics_data)?;
 
-    // 生成FFmpeg drawtext滤镜链
-    let drawtext_filters = generate_drawtext_filters(&lyrics, &config);
+    // 1. 生成 ASS 内容
+    let ass_content = generate_ass_content(&lyrics, &config);
 
+    // 2. 写入临时 ASS 文件
+    let ass_path = format!("{}.ass", config.output_path);
+    fs::write(&ass_path, &ass_content)
+        .map_err(|e| format!("无法写入临时ASS文件: {}", e))?;
+
+    // 3. 构建 FFmpeg 命令
     let mut cmd = Command::new("ffmpeg");
-
     cmd.args(["-y", "-i", &config.input_video]);
 
-    // 视频滤镜
-    cmd.args(["-vf", &drawtext_filters]);
+    // ASS滤镜（支持逐字卡拉OK扫色）
+    let ass_filter = if let Some(ref font_dir) = config.font_dir {
+        format!("ass={}:fontsdir={}", ass_path, font_dir)
+    } else {
+        format!("ass={}", ass_path)
+    };
+    cmd.args(["-vf", &ass_filter]);
 
-    // 视频编码参数
+    // 视频编码
     cmd.args([
         "-c:v", "libx264",
         "-preset", &config.encoder_preset,
@@ -1906,18 +2206,16 @@ pub fn export_video(config: VideoExportConfig) -> Result<(), String> {
         "-s", &format!("{}x{}", config.width, config.height),
         "-r", &format!("{}", config.frame_rate),
     ]);
-
     // 音频编码
-    cmd.args([
-        "-c:a", "aac",
-        "-b:a", &config.audio_bitrate,
-    ]);
-
+    cmd.args(["-c:a", "aac", "-b:a", &config.audio_bitrate]);
     cmd.arg(&config.output_path);
 
-    // 执行
+    // 4. 执行
     let output = cmd.output()
         .map_err(|e| format!("FFmpeg执行失败: {}. 请确认FFmpeg已安装", e))?;
+
+    // 5. 清理临时文件
+    let _ = fs::remove_file(&ass_path);
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1927,48 +2225,105 @@ pub fn export_video(config: VideoExportConfig) -> Result<(), String> {
     Ok(())
 }
 
-/// 生成FFmpeg drawtext滤镜字符串
-///
-/// 为每个字幕行生成两个drawtext：
-///   1. 未唱颜色（作为底层，始终可见）
-///   2. 已唱颜色（根据播放时间从左侧裁切）
-fn generate_drawtext_filters(
-    lyrics: &[LyricOverlay],
+/// 从歌词数据生成 ASS 字幕内容（含逐字 \\k 卡拉OK标签）
+fn generate_ass_content(
+    lyrics: &[LyricLineForExport],
     config: &VideoExportConfig,
 ) -> String {
-    let mut filters = Vec::new();
+    let mut ass = String::new();
 
-    for (i, overlay) in lyrics.iter().enumerate() {
-        let font_file = config.font_file.as_deref().unwrap_or("");
-        let font_size = overlay.font_size;
+    // === [Script Info] ===
+    ass.push_str(&format!(
+        "[Script Info]\n\
+         ; Generated by Karaoke Lyrics Maker\n\
+         Title: {}\n\
+         ScriptType: v4.00+\n\
+         PlayResX: {}\n\
+         PlayResY: {}\n\
+         WrapStyle: 0\n\
+         ScaledBorderAndShadow: yes\n\n",
+        "Karaoke Video", config.width, config.height
+    ));
 
-        for (j, word) in overlay.words.iter().enumerate() {
-            let x = word.x;
-            let y = word.y;
+    // === [V4+ Styles] ===
+    ass.push_str(
+        "[V4+ Styles]\n\
+         Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, \
+         OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, \
+         ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, \
+         Alignment, MarginL, MarginR, MarginV, Encoding\n\
+         Style: KLM,Microsoft YaHei,48,&H00FFFFFF,&H0000FFFF,&H00000000,\
+         &H80000000,0,0,0,0,100,100,2,0,1,3,0,2,10,10,50,1\n\n"
+    );
 
-            // 底层：未唱颜色（始终绘制）
-            let base_filter = format!(
-                "drawtext=fontfile='{font}':text='{text}':fontsize={size}:\
-                 fontcolor={unsung_color}:x={x}:y={y}:bordercolor={border}:borderw={bw}",
-                font = font_file,
-                text = escape_ffmpeg_text(&word.text),
-                size = font_size,
-                unsung_color = overlay.unsung_color_hex,
-                x = x,
-                y = y,
-                border = overlay.border_color_hex,
-                bw = overlay.border_width,
-            );
+    // === [Events] ===
+    ass.push_str(
+        "[Events]\n\
+         Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    );
 
-            // TODO: 为精确逐字扫色，需要更复杂的滤镜逻辑
-            // 简化版：使用 enable 参数控制显示时间
-            filters.push(base_filter);
+    for line in lyrics {
+        let start = format_ass_time(line.start_time_ms);
+        let end = format_ass_time(line.end_time_ms);
+
+        // 行首显式设置 SecondaryColour（未填充色=\\2c）和 PrimaryColour（已填充色=\\1c）
+        // 确保 \\k 标签的扫色行为确定（从未填充色过渡到已填充色）
+        let unsung_bgr = rgba_to_ass_bgr(&line.unsung_color);
+        let sung_bgr = rgba_to_ass_bgr(&line.sung_color);
+        let mut ass_text = format!(
+            "{{\\2c&{}}}{{\\1c&{}}}",
+            unsung_bgr, sung_bgr
+        );
+
+        // 生成逐字 \\K 标签（平滑渐隐，比 \\k 更自然）
+        for char in &line.characters {
+            let duration_cs = ((char.end_time_ms - char.start_time_ms) / 10) as u32;
+            ass_text.push_str(&format!(
+                "{{\\K{}}}",
+                duration_cs.max(1), // 至少1厘秒
+            ));
+            ass_text.push_str(&char.text);
         }
+
+        ass.push_str(&format!(
+            "Dialogue: 0,{},{},KLM,,0,0,0,,{}\n",
+            start, end, ass_text
+        ));
     }
 
-    filters.join(",")
+    ass
+}
+
+/// 毫秒 → ASS时间格式 H:MM:SS.cc
+fn format_ass_time(ms: u64) -> String {
+    let total_secs = ms as f64 / 1000.0;
+    let h = (total_secs / 3600.0) as u32;
+    let m = ((total_secs % 3600.0) / 60.0) as u32;
+    let s = total_secs % 60.0;
+    format!("{}:{:02}:{:05.2}", h, m, s)
+}
+
+/// RGBA → ASS ABGR十六进制颜色（&HAABBGGRR）
+/// **重要**：ASS 的 Alpha 通道是反的！
+///   - RGBA 中 a=1.0 = 完全不透明
+///   - ASS 中 &H00 = 完全不透明, &HFF = 完全透明
+///   必须做 1.0 - alpha 反转
+fn rgba_to_ass_bgr(color: &RGBA) -> String {
+    let a_inverted = ((1.0 - color.a) * 255.0) as u8;
+    format!("{:02X}{:02X}{:02X}{:02X}", a_inverted, color.b, color.g, color.r)
 }
 ```
+
+**ASS标签说明**：
+- `\K<N>`：音节持续 N 厘秒，结束时带平滑渐隐过渡（推荐，比 `\k` 更自然）
+- `\k<N>`：音节持续 N 厘秒，立即开始→立即结束（边界清晰但稍突兀）
+- `\kf<N>`：扫色完成后渐隐，适合平滑的卡拉OK效果
+- `\2c&HBBGGRR&`：SecondaryColour（未填充色），`\k/\K` 扫色的起始颜色
+- `\1c&HBBGGRR&`：PrimaryColour（已填充色），`\k/\K` 扫色的目标颜色
+- **Alpha 反转**：RGBA `a=1.0`=不透明，ASS `&H00`=不透明 `&HFF`=透明，需反转
+- **标准语法**：`\kf123`（数字直接跟标签，不要加 `$` 等分隔符，否则参数解析失败）
+
+如果需要完全复刻 Canvas 预览的渐变过渡带效果，使用 `\K` 标签替代 `\k`。
 
 ### 11.2 LRC导出
 

@@ -58,7 +58,7 @@
 | 风险 | 影响 | 缓解措施 |
 |------|------|----------|
 | WebView视频格式支持不一致 | 部分格式无法预览 | 导入时自动转码为H.264 MP4；提供备用的Rust视频渲染管线 |
-| Tauri生态较新 | 部分功能缺少现成插件 | 核心功能用Rust实现，通过FFmpeg CLI或ffmpeg-next库处理媒体 |
+| Tauri生态较新 | 部分功能缺少现成插件 | 核心功能用Rust实现，通过FFmpeg CLI子进程处理媒体 |
 | WebView跨平台差异 | Linux (WebKitGTK) 表现可能与Windows (WebView2) 不同 | 尽早建立跨平台CI测试；关键渲染路径用Canvas而非CSS |
 
 ### 2.2 前端技术栈
@@ -88,23 +88,43 @@
 | Crate | 用途 |
 |-------|------|
 | `tauri` 2.x | 应用框架 |
-| `ffmpeg-next` | 视频/音频编解码、导出渲染 |
-| `symphonia` | 音频解码（纯Rust实现，无需系统依赖） |
+| `symphonia` | 纯Rust音频解码（波形生成，无需系统FFmpeg依赖） |
 | `hound` | WAV文件读写 |
 | `serde` + `serde_json` | 序列化/反序列化 |
 | `zip` | 项目文件打包（.klproj格式） |
-| `regex` | 文本解析（导入各种字幕格式） |
+| `regex` | 文本解析（导入各种字幕格式、ASS标签解析） |
 | `encoding_rs` | 文本编码检测与转换 |
 | `walkdir` | 文件系统遍历 |
 | `dirs` | 跨平台目录（配置、缓存等） |
+| `uuid` | 唯一标识符生成（LyricLine/LyricChar ID） |
+| `log` + `env_logger` | 日志框架 |
+| `bincode` | 注音词典序列化 |
 
-#### 为什么需要 ffmpeg-next？
+**注：所有 FFmpeg 交互通过子进程 CLI 进行**（`std::process::Command`），不依赖任何 FFmpeg Rust 绑定 crate：
+1. `ffprobe` 探测媒体元数据（Phase 1）
+2. `ffmpeg` 命令行渲染导出（ASS滤镜方案，Phase 5）
+3. `ffmpeg` 缩略图生成
+4. `ffmpeg` 格式转码（仅在 WebView 不兼容时触发）
+无需在构建时安装 FFmpeg 开发库（libavcodec-dev 等）。
 
+#### FFmpeg 子进程 CLI 用途
+
+所有 FFmpeg 交互通过 `std::process::Command` 调用外部 ffmpeg/ffprobe 命令，不依赖任何 FFmpeg Rust 绑定：
+
+- **媒体探测**：`ffprobe` 提取视频/音频元数据（分辨率、帧率、编码、时长等）
 - **视频导出渲染**：将歌词字幕合成到视频上，生成最终成品视频
-- **音频解码**：提取音频用于波形图生成（备选方案：symphonia）
-- **格式转换**：统一导入的媒体格式
+- **格式转换**：当WebView不支持某编码时，转码为H.264 MP4
 - **缩略图生成**：视频时间线缩略图
-- **备用视频播放**：当WebView无法播放某格式时，用FFmpeg解码帧并通过Canvas显示
+
+#### 视频导出方案：ASS 滤镜（非 drawtext）
+
+经过调研确认，FFmpeg的 `drawtext` 滤镜最小操作单位是整个文本字符串，**无法实现逐字扫色**。正确方案是：
+
+1. 程序根据内部歌词数据（LyricLine/LyricChar）动态生成ASS字幕文件
+2. ASS格式的 `\k` / `\K` / `\kf` 标签天然支持音节级别的计时和颜色渐变
+3. 使用 `ffmpeg -i input.mp4 -vf "ass=lyrics.ass" output.mp4` 渲染
+4. 每行 Dialogue 开头显式设置 SecondaryColour（未填充色）和 PrimaryColour（已填充色）
+5. **Alpha 反转**：ASS中 `&H00`=不透明 `&HFF`=透明（与 RGBA 相反），必须做 `1.0 - alpha` 转换
 
 ### 2.4 FFmpeg捆绑策略
 
@@ -137,18 +157,18 @@ FFmpeg是一个较大的依赖（~80MB），有几种部署策略：
 │              Renderer Process             │
 │  (WebView - React App)                    │
 │  - UI渲染                                 │
-│  - 视频预览 (HTML5 <video>)               │
+│  - 视频预览 (HTML5 <video>，Linux备选mpv)  │
 │  - Canvas歌词动画 (requestAnimationFrame) │
+│  - Web Audio API 精确计时                  │
 │  - 波形图交互                              │
 │  - 用户输入处理                            │
 ├──────────────────────────────────────────┤
 │         Worker Thread (Web Worker)        │
-│  - 音频波形数据计算                        │
-│  - 文本解析（LRC/ASS导入）                 │
-│  - 注音字典查询                            │
+│  - 音频波形数据后处理（缩放级别转换）        │
+│  - 大规模文本预处理（可选异步任务）          │
 ├──────────────────────────────────────────┤
 │       FFmpeg Subprocess (on-demand)       │
-│  - 视频导出渲染                            │
+│  - 视频导出渲染（ASS滤镜方案）              │
 │  - 媒体格式转码                            │
 │  - 缩略图生成                              │
 └──────────────────────────────────────────┘
@@ -158,14 +178,21 @@ FFmpeg是一个较大的依赖（~80MB），有几种部署策略：
 
 | 通道 | 方向 | 数据 | 频率 |
 |------|------|------|------|
-| `playback:seek` | Frontend→Backend | 目标时间(ms) | 低频（用户拖拽） |
-| `playback:timeupdate` | Backend→Frontend | 当前时间(ms) | 高频（每~16ms，60fps） |
+| `media:open_video` | Frontend→Backend | 文件路径选择 | 低频（用户操作） |
+| `media:open_audio` | Frontend→Backend | 文件路径选择 | 低频 |
+| `media:get_waveform` | Frontend→Backend | 文件路径→波形数据 | 低频（加载时一次性） |
+| `media:probe` | Frontend→Backend | 文件路径→媒体元信息 | 低频 |
+| `playback:position_update` | Frontend→Backend | 当前时间(ms) + 播放状态 | 低频（每500ms） |
 | `timeline:mark` | Frontend→Backend | 标记类型、时间点 | 中频（按键打轴时） |
 | `project:save` | Frontend→Backend | 项目数据JSON | 低频 |
 | `project:load` | Backend→Frontend | 项目数据JSON | 低频 |
-| `export:progress` | Backend→Frontend | 进度百分比 | 中频（导出时每秒） |
-| `media:waveform` | Backend→Frontend | 波形数据数组 | 低频（加载时一次性） |
+| `export:progress` | Backend→Frontend | 进度百分比+预估时间 | 中频（导出时每秒） |
 | `dict:query` | Frontend→Backend | 文字→注音 | 中频（文本输入/导入时） |
+
+**重要说明**：
+- 播放时间**完全在前端消费**（通过 PlaybackClock + rAF 循环），不经 IPC 传输
+- seek 操作在前端直接设置 `mediaElement.currentTime` + PlaybackClock 重锚定，不经 IPC
+- `playback:position_update` 仅用于后端需要感知位置的辅助功能（如波形高亮渲染），低频非关键
 
 ## 4. 数据流架构
 
@@ -261,12 +288,40 @@ Store
 
 ## 5. 关键设计决策
 
-### 5.1 时间精度
+### 5.1 时间精度与时间源
 
 - 内部时间单位：**毫秒(ms)**，使用整数
 - 显示精度：毫秒（可配置显示到10ms或1ms）
 - 打轴时自动吸附：可配置吸附到最近的波形峰值（±20ms）
 - 帧对齐导出：导出视频时对齐到视频帧边界（如30fps则对齐到33ms的整数倍）
+
+**时间源选择（重要架构决策）**：
+
+| 时间源 | 精度 | 稳定性 | 跨平台 | 适用场景 |
+|--------|------|--------|--------|----------|
+| HTML5 `video.currentTime` | ~250ms间隔 | 受解码器影响，seek后可能跳变 | ✅ 通用 | 视频播放进度显示 |
+| Web Audio API `AudioContext.currentTime` | 亚毫秒（双精度） | 硬件时间戳，单调递增 | ✅ 通用（WebView） | **打轴计时、扫色同步** |
+| `requestAnimationFrame` 时间戳 | ~16ms（60fps） | 稳定 | ✅ 通用 | Canvas渲染循环 |
+
+**结论**：打轴和扫色动画应使用 **Web Audio API 的 `AudioContext.currentTime`** 作为主时间源：
+- 精度远超 HTML5 Audio（即使在 Firefox 的指纹保护降精度模式下仍有2ms精度）
+- 单调递增，不受 seek/pause 跳变影响
+- 通过 `MediaElementAudioSourceNode` 将 `<video>` 的音频连接到 Web Audio API 图
+- 使用 rAF 循环读取 `audioContext.currentTime` 驱动 Canvas 扫色动画
+
+```typescript
+// 关键架构模式
+const audioCtx = new AudioContext();
+const source = audioCtx.createMediaElementSource(videoElement);
+source.connect(audioCtx.destination);
+
+// 渲染循环
+function renderLoop() {
+  const preciseTime = audioCtx.currentTime * 1000; // 秒→毫秒
+  canvasRenderer.render(preciseTime, lyrics, style);
+  requestAnimationFrame(renderLoop);
+}
+```
 
 ### 5.2 歌词扫色模型
 
