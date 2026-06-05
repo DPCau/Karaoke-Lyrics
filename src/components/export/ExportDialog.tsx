@@ -7,7 +7,6 @@ import {
   exportVideo,
   detectFfmpeg,
   buildExportOptions,
-  type ExportOptions,
   type ExportProgress,
   type FfmpegInfo,
 } from "../../services/exportService";
@@ -505,7 +504,7 @@ export function ExportDialog({ open, onClose, lines }: ExportDialogProps) {
           <button
             type="button"
             onClick={format === "ass" ? handleExportVideo : handleExport}
-            disabled={exporting || (format === "ass" && ffmpegInfo && !ffmpegInfo.found)}
+            disabled={exporting || (format === "ass" && ffmpegInfo !== null && !ffmpegInfo.found)}
             className="px-4 py-1.5 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {exporting && (
