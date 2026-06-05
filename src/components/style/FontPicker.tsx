@@ -1,4 +1,5 @@
 import { useStore } from "../../store";
+import { useTranslation } from "react-i18next";
 import {
   SliderControl,
   ToggleControl,
@@ -23,16 +24,17 @@ const FONT_FAMILIES = [
 ];
 
 const WEIGHT_OPTIONS = [
-  { value: "300", label: "Light" },
-  { value: "400", label: "Regular" },
-  { value: "500", label: "Medium" },
-  { value: "600", label: "Semi" },
-  { value: "700", label: "Bold" },
-  { value: "800", label: "Heavy" },
-  { value: "900", label: "Black" },
+  { value: "300", labelKey: "style_panel.weightLight" },
+  { value: "400", labelKey: "style_panel.weightRegular" },
+  { value: "500", labelKey: "style_panel.weightMedium" },
+  { value: "600", labelKey: "style_panel.weightSemiBold" },
+  { value: "700", labelKey: "style_panel.weightBold" },
+  { value: "800", labelKey: "style_panel.weightHeavy" },
+  { value: "900", labelKey: "style_panel.weightBlack" },
 ];
 
 export function FontPicker() {
+  const { t } = useTranslation();
   const fontConfig = useStore((s) => s.fontConfig);
   const setFontConfig = useStore((s) => s.setFontConfig);
 
@@ -40,7 +42,7 @@ export function FontPicker() {
     <div className="space-y-3">
       {/* Font family */}
       <SelectControl
-        label="Font Family"
+        label={t("style_panel.fontFamily")}
         value={fontConfig.family}
         options={FONT_FAMILIES}
         onChange={(v) => setFontConfig({ family: v })}
@@ -48,7 +50,7 @@ export function FontPicker() {
 
       {/* Font size */}
       <SliderControl
-        label="Size"
+        label={t("style_panel.fontSize")}
         value={fontConfig.size}
         min={12}
         max={200}
@@ -60,7 +62,7 @@ export function FontPicker() {
       {/* Weight selector */}
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
-          Weight
+          {t("style_panel.fontWeight")}
         </label>
         <div className="flex gap-1">
           {WEIGHT_OPTIONS.map((opt) => (
@@ -74,7 +76,7 @@ export function FontPicker() {
                   : "bg-surface-2 text-gray-400 hover:text-gray-200 hover:bg-surface-3"
               }`}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>
@@ -82,14 +84,14 @@ export function FontPicker() {
 
       {/* Italic toggle */}
       <ToggleControl
-        label="Italic"
+        label={t("style_panel.italic")}
         value={fontConfig.italic}
         onChange={(v) => setFontConfig({ italic: v })}
       />
 
       {/* Line height */}
       <SliderControl
-        label="Line Height"
+        label={t("style_panel.lineHeight")}
         value={fontConfig.lineHeight}
         min={0.8}
         max={3.0}
@@ -100,7 +102,7 @@ export function FontPicker() {
 
       {/* Letter spacing */}
       <SliderControl
-        label="Letter Spacing"
+        label={t("style_panel.letterSpacing")}
         value={fontConfig.letterSpacing}
         min={-5}
         max={20}

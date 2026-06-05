@@ -58,12 +58,12 @@ function generateId(): string {
 // Built-in preset labels
 // ---------------------------------------------------------------------------
 
-const BUILT_IN_PRESETS: { id: StylePreset; label: string }[] = [
-  { id: "classic", label: "Classic" },
-  { id: "modern", label: "Modern" },
-  { id: "neon", label: "Neon" },
-  { id: "subtle", label: "Subtle" },
-  { id: "bold", label: "Bold" },
+const BUILT_IN_PRESETS: { id: StylePreset; labelKey: string }[] = [
+  { id: "classic", labelKey: "style_panel.presetClassic" },
+  { id: "modern", labelKey: "style_panel.presetModern" },
+  { id: "neon", labelKey: "style_panel.presetNeon" },
+  { id: "subtle", labelKey: "style_panel.presetSubtle" },
+  { id: "bold", labelKey: "style_panel.presetBold" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -154,7 +154,7 @@ export function StylePresetManager() {
               onClick={() => handleApplyBuiltIn(preset.id)}
               className="px-2 py-1.5 text-[11px] rounded bg-surface-2 text-gray-400 hover:text-gray-200 hover:bg-surface-3 transition-colors border border-transparent hover:border-surface-3 text-left"
             >
-              {preset.label}
+              {t(preset.labelKey)}
             </button>
           ))}
         </div>

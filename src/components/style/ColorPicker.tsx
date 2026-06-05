@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { RGBA } from "../../types/style";
 import {
   parseCssColor,
@@ -127,6 +128,7 @@ export function ColorPicker({
   onChange,
   compact = false,
 }: ColorPickerProps) {
+  const { t } = useTranslation();
   const [rgba, setRgba] = useState<RGBA>(() => parseCssColor(value));
   const [hexInput, setHexInput] = useState(() => rgbaToHex(parseCssColor(value)));
   const [editingHex, setEditingHex] = useState(false);
@@ -207,7 +209,7 @@ export function ColorPicker({
               }}
               autoFocus
               className="w-full bg-surface-2 border border-surface-3 rounded px-2 py-1 text-xs font-mono text-gray-200 focus:outline-none focus:border-accent/50"
-              placeholder="#rrggbb"
+              placeholder={t("style_panel.hexPlaceholder")}
             />
           ) : (
             <button
@@ -262,7 +264,7 @@ export function ColorPicker({
       {!compact && (
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-gray-600 font-medium mb-1">
-            Presets
+            {t("style_panel.colorPresets")}
           </label>
           <div className="flex flex-wrap gap-1">
             {PRESET_COLORS.map((c) => (
@@ -301,6 +303,7 @@ export function ColorPickerRGBA({
   onChange,
   compact = false,
 }: ColorPickerRGBAProps) {
+  const { t } = useTranslation();
   const [rgba, setRgba] = useState<RGBA>(value);
   const [hexInput, setHexInput] = useState(() => rgbaToHex(value));
   const [editingHex, setEditingHex] = useState(false);
@@ -383,7 +386,7 @@ export function ColorPickerRGBA({
               }}
               autoFocus
               className="w-full bg-surface-2 border border-surface-3 rounded px-2 py-1 text-xs font-mono text-gray-200 focus:outline-none focus:border-accent/50"
-              placeholder="#rrggbb"
+              placeholder={t("style_panel.hexPlaceholder")}
             />
           ) : (
             <button
@@ -436,7 +439,7 @@ export function ColorPickerRGBA({
       {!compact && (
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-gray-600 font-medium mb-1">
-            Presets
+            {t("style_panel.colorPresets")}
           </label>
           <div className="flex flex-wrap gap-1">
             {PRESET_COLORS.map((c) => (
