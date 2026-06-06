@@ -56,23 +56,25 @@ jobs:
         env:
           CI: true
 
+      - name: Collect release artifacts
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          # Copy all bundle artifacts (exclude .sig files)
+          for dir in src-tauri/target/release/bundle src-tauri/target/*/release/bundle; do
+            if [ -d "$dir" ]; then
+              echo "Found bundle dir: $dir"
+              find "$dir" -type f \( -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.msi" -o -name "*.exe" -o -name "*.app.tar.gz" \) ! -name "*.sig" -exec cp -v {} release-artifacts/ \;
+            fi
+          done
+          echo "=== Collected artifacts ==="
+          ls -lh release-artifacts/
+
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
-          files: |
-            src-tauri/target/*/release/bundle/**/*.dmg
-            src-tauri/target/*/release/bundle/**/*.app.tar.gz
-            src-tauri/target/release/bundle/**/*.dmg
-            src-tauri/target/release/bundle/**/*.app.tar.gz
-            src-tauri/target/*/release/bundle/**/*.AppImage
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/*/release/bundle/**/*.deb
-            src-tauri/target/release/bundle/**/*.deb
-            src-tauri/target/*/release/bundle/**/*.msi
-            src-tauri/target/release/bundle/**/*.msi
-            src-tauri/target/*/release/bundle/**/*.exe
-            src-tauri/target/release/bundle/**/*.exe
+          files: release-artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
