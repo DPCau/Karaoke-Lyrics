@@ -63,19 +63,19 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-artifacts
-          echo "=== Searching for bundle directory ==="
-          BUNDLE_DIR=$(find . -type d -path "*/release/bundle" | head -1)
-          echo "Found bundle dir: $BUNDLE_DIR"
-          if [ -n "$BUNDLE_DIR" ]; then
-            echo "=== Bundle contents ==="
-            ls -R "$BUNDLE_DIR"
-            echo "=== Copying artifacts ==="
-            for ext in dmg AppImage deb msi nsis.zip app.tar.gz; do
-              find "$BUNDLE_DIR" -type f -name "*.$ext" ! -name "*.sig" -exec sh -c 'echo "Copying: $1"; cp "$1" release-artifacts/' _ {} \;
-            done
-            # For Windows, also get the NSIS installer exe (contains 'setup' or specific patterns)
-            find "$BUNDLE_DIR" -type f -name "*.exe" ! -name "*.sig" -exec sh -c 'echo "Copying: $1"; cp "$1" release-artifacts/' _ {} \;
-          fi
+          echo "=== Working directory ==="
+          pwd
+          echo "=== All target directories ==="
+          find . -type d -name "target" 2>/dev/null | head -5
+          echo "=== Looking for bundle dirs ==="
+          find . -type d -name "bundle" 2>/dev/null | head -10
+          echo "=== Copying artifacts ==="
+          # Search for specific bundle file types
+          find . -type f -name "*.dmg" -not -path "*/\.*" | while read f; do echo "DMG: $f"; cp "$f" release-artifacts/; done
+          find . -type f -name "*.AppImage" -not -path "*/\.*" | while read f; do echo "AppImage: $f"; cp "$f" release-artifacts/; done
+          find . -type f -name "*.deb" -not -path "*/\.*" | while read f; do echo "DEB: $f"; cp "$f" release-artifacts/; done
+          find . -type f -name "*.msi" -not -path "*/\.*" | while read f; do echo "MSI: $f"; cp "$f" release-artifacts/; done
+          find . -type f -name "*.app.tar.gz" -not -path "*/\.*" | while read f; do echo "TAR.GZ: $f"; cp "$f" release-artifacts/; done
           echo "=== Artifacts collected ==="
           ls -lh release-artifacts/ || echo "No artifacts found"
 
