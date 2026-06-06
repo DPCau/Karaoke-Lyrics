@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">🎤 Karaoke Lyrics Maker</h1>
+  <h1 align="center"><img src="./icon.png" width="48" style="vertical-align:middle" alt="logo"> Karaoke Lyrics Maker</h1>
   <p align="center">跨平台卡拉OK歌词制作软件 | 跨平台卡拉OK歌詞製作軟體 | クロスプラットフォームカラオケ歌詞作成ソフト</p>
   <p align="center">
     <a href="./README.md">简体中文</a> | <a href="./docs/translations/README.en.md">English</a> | <a href="./docs/translations/README.zh-TW.md">繁體中文</a> | <a href="./docs/translations/README.ja.md">日本語</a>
