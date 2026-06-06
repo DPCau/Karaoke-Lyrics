@@ -63,12 +63,19 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-artifacts
-          echo "=== Current directory ==="
-          pwd
           echo "=== Searching for bundle directory ==="
-          find . -type d -name "bundle" 2>/dev/null | head -5
-          echo "=== Copying artifacts ==="
-          find . -type f \( -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.msi" -o -name "*.exe" -o -name "*.nsis.zip" -o -name "*.app.tar.gz" \) ! -name "*.sig" -exec sh -c 'echo "Copying: $1"; cp "$1" release-artifacts/' _ {} \;
+          BUNDLE_DIR=$(find . -type d -path "*/release/bundle" | head -1)
+          echo "Found bundle dir: $BUNDLE_DIR"
+          if [ -n "$BUNDLE_DIR" ]; then
+            echo "=== Bundle contents ==="
+            ls -R "$BUNDLE_DIR"
+            echo "=== Copying artifacts ==="
+            for ext in dmg AppImage deb msi nsis.zip app.tar.gz; do
+              find "$BUNDLE_DIR" -type f -name "*.$ext" ! -name "*.sig" -exec sh -c 'echo "Copying: $1"; cp "$1" release-artifacts/' _ {} \;
+            done
+            # For Windows, also get the NSIS installer exe (contains 'setup' or specific patterns)
+            find "$BUNDLE_DIR" -type f -name "*.exe" ! -name "*.sig" -exec sh -c 'echo "Copying: $1"; cp "$1" release-artifacts/' _ {} \;
+          fi
           echo "=== Artifacts collected ==="
           ls -lh release-artifacts/ || echo "No artifacts found"
 
